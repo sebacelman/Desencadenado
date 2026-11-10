@@ -1,0 +1,6 @@
+{
+  "appId": "com.seba.desencadenado",
+  "appName": "Desencadenado",
+  "webDir": "www",
+  "android": { "backgroundColor": "#1a1f24" }
+}
