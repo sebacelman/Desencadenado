@@ -38,6 +38,21 @@ h1 em{font-style:normal;color:var(--accent);font-size:1.1rem;vertical-align:top;
 .big{font-family:var(--display);font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap;text-align:right}
 .big small{display:block;font-family:var(--body);font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.progsw{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.progsw button{border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:var(--surface);color:var(--muted);font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.progsw button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.exname{all:unset;cursor:pointer;font-size:1.02rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;text-decoration-thickness:2px}
+.exname:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.items .lk{all:unset;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.sheet{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet .card{background:var(--surface);color:var(--fg);width:100%;max-width:600px;max-height:85vh;overflow:auto;border-radius:16px 16px 0 0;box-sizing:border-box;
+  padding:18px max(18px,env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.sheet h2{margin:0;font:700 1.5rem var(--display);text-transform:uppercase;letter-spacing:.03em}
+.sheet h4{margin:6px 0 0;font:700 .8rem var(--body);text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+.sheet ol,.sheet ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px}
+.sheet p{margin:0}
+.sheet .row a.btn{text-decoration:none}
+details summary{cursor:pointer;margin-top:4px}
 .views{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--line);padding:4px;border-radius:12px}
 .views button{border:0;border-radius:9px;padding:9px;background:transparent;color:var(--muted);font:700 1.05rem var(--display);text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
 .views button[aria-selected="true"]{background:var(--surface);color:var(--fg)}
@@ -134,9 +149,13 @@ td.num,th.num{text-align:right}
 <body>
 <div class="wrap">
   <header>
-    <div><h1>Desencadenado</h1><div class="sub">Tocá la serie o anotá las reps · peso y variante por ejercicio</div></div>
+    <div><h1><span id="pTitle">Desencadenado</span></h1><div class="sub" id="pSub">Tocá la serie o anotá las reps · peso y variante por ejercicio</div></div>
     <div class="big"><small id="weekLbl">Semana</small><span id="weekPct">0%</span></div>
   </header>
+  <div class="progsw" id="progSw">
+    <button type="button" id="pDes" data-prog="des">Desencadenado</button>
+    <button type="button" id="pKb" data-prog="kb">Kettlebell</button>
+  </div>
   <div class="views" role="tablist">
     <button type="button" id="vTrain" role="tab" aria-selected="true">Entrenar</button>
     <button type="button" id="vProg" role="tab" aria-selected="false">Progreso</button>
@@ -173,7 +192,7 @@ td.num,th.num{text-align:right}
     </div>
     <div class="panel">
       <h2>Copia de seguridad</h2>
-      <div class="note">Para guardar: "Mostrar" y después "Copiar", y pegalo en una nota o un mensaje. Para recuperar o importar: pegá el texto y tocá "Cargar".</div>
+      <div class="note">Incluye los dos programas. Para guardar: "Mostrar" y después "Copiar", y pegalo en una nota o un mensaje. Para recuperar o importar: pegá el texto y tocá "Cargar".</div>
       <div class="row"><button class="btn" id="backupBtn" type="button">Mostrar</button></div>
       <div id="backupBox" hidden style="display:flex;flex-direction:column;gap:8px">
         <textarea id="backupTxt" spellcheck="false" style="width:100%;box-sizing:border-box;min-height:110px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--fg);padding:8px"></textarea>
@@ -189,6 +208,14 @@ td.num,th.num{text-align:right}
   <button type="button" data-rest="30">30s</button>
   <button type="button" data-rest="60">60s</button>
   <button type="button" data-rest="90">90s</button>
+</div></div>
+
+<div class="sheet" id="sheet" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+  <h2 id="shTitle"></h2><p class="note" id="shQ"></p>
+  <h4>Cómo se hace</h4><ol id="shC"></ol>
+  <div id="shEw"><h4>Errores comunes</h4><ul id="shE"></ul></div>
+  <div id="shFw"><h4>Si te cuesta</h4><p id="shF"></p></div>
+  <div class="row" style="margin-top:6px"><a class="btn primary" id="shVid" href="#" target="_blank" rel="noopener">Ver videos en YouTube</a><button class="btn" id="shClose" type="button">Cerrar</button></div>
 </div></div>
 
 <div class="ov" id="timer" hidden>
@@ -248,7 +275,7 @@ const POTENCIA=[
     e("Dominadas con agarre supino",3,"5–8 reps"),e("Semi-dominadas horizontales",3,"8–10 reps"),e("Dominada comando",2,"5–8 reps",X)]},
   {name:"Core",ex:[e("Abdominales",3,"8–10 reps"),e("Levantamiento de caderas con 1 pierna",3,"8–10 reps"),
     e("Plancha con flexión",3,"15–20 reps"),e("Plancha lateral con flexión",2,"15–20 reps por lado"),e("Lumbares",3,"8–10 reps",X)]}];
-const PROGRAM=[
+let PROGRAM=[
  {w:1,days:PIRAMIDES},{w:2,days:PIRAMIDES},{w:3,days:FUERZA},{w:4,days:FUERZA},{w:5,days:POTENCIA},{w:6,days:POTENCIA},
  {w:7,days:[
   {name:"Día 1",ex:[e("Flexiones sobre balón",3,"8–10 reps por brazo"),e("Flexiones profundas",3,"5–8 reps"),
@@ -287,21 +314,222 @@ const PROGRAM=[
   {name:"Día 4",ex:[e("Intervalos",6,"6 rondas",{u:"R",it:["10 flexiones en nivel máximo","Esprintá 20 s (en casa: saltá cuerda 30 s lo más rápido posible)","Descansá 20 s"],
     tm:[{l:"Sprint 20 s + descanso 20 s",w:20,r:20,n:1,rl:1,wname:"Sprint"},{l:"Cuerda 30 s + descanso 20 s",w:30,r:20,n:1,rl:1,wname:"Saltá cuerda"}]})]}]},
 ];
+// ================= EFECTO KETTLEBELL =================
+// Biblioteca de ejercicios: n nombre, en búsqueda de video, q qué trabaja, c cómo se hace, e errores, f más fácil
+const LIB={
+ swing:{n:"Swing (dos manos)",en:"kettlebell two hand swing hardstyle",q:"Glúteos, isquios, core y cardio. Es la base de casi todo el programa.",
+  c:["Pies un poco más anchos que los hombros, pesa en el piso unos 30 cm delante.","Bisagra de cadera: cola atrás, espalda recta, rodillas apenas flexionadas.","Llevá la pesa hacia atrás entre las piernas, como un pase de rugby.","Extendé la cadera de golpe apretando glúteos y abdomen: la pesa sube sola hasta la altura del pecho.","Los brazos son cuerdas: no levantan, solo guían."],
+  e:["Hacer sentadilla en vez de bisagra (bajar con las rodillas).","Subir la pesa con los hombros.","Arquear la espalda arriba: terminá parado y recto, como una plancha de pie."],f:"Practicá la bisagra sin pesa o con un peso muerto antes de hacer el swing."},
+ swing1:{n:"Swing a una mano",en:"kettlebell one arm swing",q:"Igual que el swing, más trabajo de core antirrotación y agarre.",
+  c:["Mismo movimiento que el swing a dos manos, con una sola mano en el centro del asa.","Hombro 'enchufado': no dejes que la pesa te tire del hombro hacia adelante.","La mano libre puede acompañar al costado o tocar la pesa arriba."],
+  e:["Girar el torso hacia el lado de la pesa.","Encoger el hombro arriba."],f:"Volvé al swing a dos manos."},
+ powerswing:{n:"Power swing",en:"kettlebell power swing hardstyle",q:"Potencia máxima de cadera.",
+  c:["Es un swing, pero cada repetición a máxima velocidad.","En la bajada, acelerá activamente la pesa hacia atrás (no la dejes caer sola).","Arriba, contracción total de glúteos y abdomen y una exhalación fuerte."],
+  e:["Perder la postura por ir rápido.","Hacerlo cansado: si baja la velocidad, cortá la serie."],f:"Swing normal."},
+ deadlift:{n:"Deadlift (peso muerto)",en:"kettlebell deadlift",q:"Cadena posterior y aprender la bisagra de cadera.",
+  c:["Pesa entre los pies, a la altura de los tobillos.","Bajá llevando la cola atrás, espalda recta, mirada al frente-abajo.","Agarrá el asa, tensá los dorsales (como apretando naranjas en las axilas).","Subí empujando el piso con los talones hasta quedar derecho, sin echarte para atrás."],
+  e:["Redondear la espalda.","Tirar con los brazos."],f:"Con menos peso o sin peso, solo el patrón de bisagra."},
+ deadmaleta:{n:"Deadlift maleta",en:"kettlebell suitcase deadlift",q:"Piernas y mucho core lateral.",
+  c:["Pesa al costado de un pie, como una valija.","Bisagra igual que el deadlift, agarrándola con una mano.","Subí manteniendo el cuerpo completamente derecho: no te inclines hacia la pesa."],
+  e:["Inclinarte hacia un lado (señal de core débil: bajá el peso)."],f:"Deadlift normal con dos manos."},
+ deadsumo:{n:"Deadlift sumo",en:"kettlebell sumo deadlift",q:"Glúteos, aductores y cuádriceps.",
+  c:["Pies bien abiertos, puntas hacia afuera, pesa en el centro.","Bajá con la espalda recta y las rodillas en la dirección de los pies.","Subí empujando con los talones."],
+  e:["Rodillas que se van hacia adentro."],f:"Menos peso, menos profundidad."},
+ deadhp:{n:"Deadlift high pull",en:"kettlebell sumo high pull",q:"Potencia de cadera y trapecios.",
+  c:["Arrancás como un deadlift sumo.","Subí con velocidad: cuando la cadera se abre, la pesa sigue subiendo.","En ese momento tirá con los codos hacia arriba y afuera hasta formar una V, a la altura del pecho.","Bajá extendiendo los brazos antes de volver a flexionar cadera y rodillas."],
+  e:["Tirar solo con los brazos sin impulso de cadera."],f:"Deadlift sumo sin el tirón final."},
+ dead1:{n:"Deadlift a una pierna",en:"kettlebell single leg deadlift",q:"Isquios, glúteo y equilibrio.",
+  c:["Pesa en la mano opuesta a la pierna de apoyo.","Inclinate hacia adelante como un sube y baja: la pierna libre se va atrás, estirada.","Cadera nivelada (no la abras hacia el costado), espalda recta.","Volvé apretando el glúteo de la pierna de apoyo."],
+  e:["Rotar la cadera.","Doblar mucho la rodilla de apoyo."],f:"Sin peso, o con la punta del pie de atrás apoyada."},
+ squat:{n:"Squat (goblet)",en:"kettlebell goblet squat",q:"Piernas, glúteos y movilidad de cadera.",
+  c:["Pesa agarrada de los cuernos, pegada al pecho, codos abajo.","Pies a la altura de los hombros, puntas un poco afuera.","Bajá entre las piernas, pecho alto, codos por dentro de las rodillas.","Subí empujando con todo el pie."],
+  e:["Talones que se levantan.","Rodillas hacia adentro.","Espalda que se redondea abajo."],f:"Sin peso o a un banco."},
+ squatrack:{n:"Squat en rack",en:"kettlebell front squat rack position",q:"Piernas y core, con la pesa en posición de rack.",
+  c:["Pesa en rack: apoyada en el antebrazo, codo pegado al cuerpo, muñeca recta.","Sentadilla profunda manteniendo el torso erguido.","Con una pesa: todas las repeticiones de un lado y sin descanso las del otro = 1 serie."],
+  e:["Dejar caer el codo hacia afuera.","Doblar la muñeca hacia atrás."],f:"Ayudate con la otra mano o volvé al goblet squat."},
+ desplante:{n:"Desplante (estocada)",en:"kettlebell lunge",q:"Piernas y glúteos, de a una.",
+  c:["Paso largo atrás o adelante, bajando la rodilla de atrás casi al piso.","Torso erguido, rodilla de adelante alineada con el pie.","La pesa puede ir al costado, en rack o al pecho (alterná)."],
+  e:["Paso corto que carga la rodilla."],f:"Sin peso."},
+ desplantelat:{n:"Desplante lateral",en:"kettlebell lateral lunge",q:"Aductores, glúteos y movilidad lateral.",
+  c:["Paso al costado bajando sobre esa pierna, la otra queda estirada.","Cola atrás, pecho alto, pesa al pecho.","Volvé empujando con la pierna flexionada."],e:["Talón que se despega."],f:"Sin peso, menos profundidad."},
+ pistol:{n:"Pistol (sentadilla a una pierna)",en:"pistol squat progression",q:"Fuerza de piernas y equilibrio.",
+  c:["Parado en una pierna, la otra estirada adelante.","Bajá lento lo más profundo que puedas controlar.","La pesa al pecho sirve de contrapeso y ayuda."],
+  e:["Rodilla que se va hacia adentro."],f:"Agarrate del marco de una puerta o bajá a un banco."},
+ squatsalto:{n:"Squat con salto",en:"kettlebell jump squat",q:"Potencia de piernas.",
+  c:["Sentadilla y salto explosivo.","Aterrizá suave, absorbiendo con las piernas, y encadená la siguiente.","Pesa al pecho o colgando entre las piernas."],e:["Aterrizar con las rodillas hacia adentro."],f:"Sin pesa."},
+ turco:{n:"Levantamiento turco",en:"kettlebell turkish get up tutorial",q:"Hombros, core y estabilidad. Movimiento lento y controlado.",
+  c:["Acostado, pesa arriba con el brazo estirado; misma rodilla flexionada.","Rodá al codo opuesto y después a la mano.","Elevá la cadera (puente), pasá la pierna estirada por debajo y apoyá la rodilla.","Enderezá el torso y parate. Después hacé todo el camino al revés.","Mirá la pesa todo el tiempo y mantené el brazo perpendicular al piso."],
+  e:["Ir rápido.","Doblar el codo del brazo con pesa."],f:"Medio levantamiento turco, o el movimiento completo sin peso (con un zapato o un vaso de agua en la mano)."},
+ clean:{n:"Clean",en:"kettlebell clean hardstyle",q:"Llevar la pesa a rack con la cadera. Base del press y del squat en rack.",
+  c:["Empieza como un swing a una mano, con la pesa más cerca del cuerpo.","Al extender la cadera, tirá el codo hacia atrás y 'metete' debajo de la pesa.","Termina en rack: pesa apoyada suave en el antebrazo, no golpeándolo.","La pesa viaja pegada al cuerpo, como subiendo un cierre."],
+  e:["Que la pesa haga un arco amplio y te golpee el antebrazo."],f:"Practicá con poco peso; o clean con dos manos."},
+ deadclean:{n:"Dead clean",en:"kettlebell dead clean",q:"Clean sin impulso: más potencia de cadera.",
+  c:["Pesa quieta en el piso, entre los pies, como en el deadlift.","Explosión de cadera y piernas desde ahí; cuando pasa la cadera, metete debajo hasta rack.","Volvé a apoyarla en el piso en cada repetición."],e:["Tirar con el brazo."],f:"Clean normal."},
+ press:{n:"Press",en:"kettlebell strict press",q:"Hombros, tríceps y core.",
+  c:["Desde rack, apretá glúteos y abdomen.","Empujá la pesa hacia arriba hasta estirar el brazo; el bíceps termina cerca de la oreja.","Bajala controlada de nuevo a rack."],
+  e:["Arquear la espalda baja.","Usar las piernas (eso es push press)."],f:"Con las dos manos o con menos peso."},
+ pushpress:{n:"Push press",en:"kettlebell push press",q:"Potencia: piernas + hombros.",
+  c:["Desde rack, pequeña flexión de rodillas (un cuarto de sentadilla).","Extendé las piernas con fuerza y aprovechá ese impulso para llevar la pesa arriba.","Terminá con el brazo bloqueado arriba."],e:["Flexionar demasiado las rodillas."],f:"Press normal con menos peso."},
+ pressuelo:{n:"Press en el suelo",en:"kettlebell floor press",q:"Pecho y tríceps.",
+  c:["Acostado boca arriba, rodillas flexionadas, pesa en la mano con el codo apoyado en el piso.","Empujá hacia el techo hasta estirar el brazo.","Bajá hasta que el codo toque el piso suave."],e:["Rebotar el codo contra el piso."],f:"Con las dos manos en una pesa."},
+ cleanpress:{n:"Clean & press",en:"kettlebell clean and press",q:"Combinación de cuerpo completo.",
+  c:["Clean a rack.","Press arriba.","Bajá a rack y de ahí al swing de la siguiente repetición."],e:["Apurar el press sin estabilizar el rack."],f:"Hacé las partes por separado."},
+ cleanpushpress:{n:"Clean & push press",en:"kettlebell clean and push press",q:"Potencia de cuerpo completo.",
+  c:["Clean a rack.","Push press: pequeña flexión y empuje explosivo arriba.","Volvé a rack y al siguiente clean."],e:[],f:"Clean & press con menos peso."},
+ highpull:{n:"High pull",en:"kettlebell high pull",q:"Paso previo al snatch: potencia y trapecios.",
+  c:["Como un swing a una mano.","Cuando la pesa sube, tirá el codo hacia atrás y arriba, a la altura del hombro.","Dejala volver estirando el brazo y seguí al swing."],e:["Tirar con el brazo antes de que la cadera termine."],f:"Swing a una mano."},
+ snatch:{n:"Snatch (arranque)",en:"kettlebell snatch tutorial",q:"El 'rey' de los balísticos: cuerpo completo y cardio.",
+  c:["Desde el swing a una mano, la pesa sube de un tirón hasta arriba con el brazo estirado.","Cerca de la cara, 'meté la mano' en el asa para que la pesa gire suave y no golpee el antebrazo.","Bajala dejándola caer cerca del cuerpo y llevala atrás entre las piernas."],
+  e:["Que la pesa te golpee el antebrazo (falta meter la mano).","Brazo flojo arriba."],f:"High pull."},
+ deadsnatch:{n:"Dead snatch",en:"kettlebell dead snatch",q:"Snatch sin impulso: máxima explosividad.",
+  c:["Pesa quieta en el piso, posición de deadlift.","Explosión de cadera hasta llevarla arriba en un solo movimiento.","Volvé a apoyarla en el piso en cada repetición."],e:[],f:"Snatch normal o high pull."},
+ row:{n:"Row (remo)",en:"kettlebell bent over row",q:"Espalda y bíceps.",
+  c:["Inclinado hacia adelante con la espalda recta (bisagra) o con una mano apoyada.","Tirá la pesa hacia la cadera llevando el codo atrás y pegado al cuerpo.","Bajá controlado."],e:["Rotar el torso para tirar."],f:"Apoyá la mano libre en una silla."},
+ renegade:{n:"Renegade row",en:"kettlebell renegade row",q:"Espalda, core y hombros.",
+  c:["En posición de flexión, manos sobre las pesas (o una pesa y un apoyo de la misma altura).","Pies abiertos para ganar estabilidad.","Remá con un brazo sin rotar la cadera, alterná."],e:["Cadera que gira o se levanta."],f:"Row normal."},
+ windmill:{n:"Windmill (molino)",en:"kettlebell windmill",q:"Oblicuos, hombro y movilidad de cadera.",
+  c:["Pesa arriba con el brazo estirado; pies girados hacia el lado contrario.","Llevá la cadera hacia el lado de la pesa e inclinate hasta tocar el piso o el pie con la otra mano.","Mirá la pesa todo el tiempo, brazo vertical."],e:["Doblar el codo de arriba."],f:"Windmill bajo (pesa en la mano de abajo) o sin peso."},
+ russian:{n:"Russian twist",en:"kettlebell russian twist",q:"Oblicuos y core.",
+  c:["Sentado, torso inclinado atrás, pies apoyados o en el aire.","Pesa al pecho, girá el torso de un lado al otro.","Contá cada lado."],e:["Mover solo los brazos."],f:"Pies apoyados y menos peso."},
+ atw:{n:"Around the world",en:"kettlebell around the world",q:"Agarre, hombros y core.",
+  c:["Pasá la pesa alrededor de la cintura de mano en mano.","Cuerpo firme y quieto: solo se mueven los brazos.","Cambiá de sentido sin apoyar la pesa."],e:["Mover la cadera."],f:"Pesa más liviana."},
+ ocho:{n:"El ocho",en:"kettlebell figure 8",q:"Agarre, core y coordinación.",
+  c:["Piernas flexionadas, pasá la pesa entre las piernas de una mano a la otra dibujando un 8."],e:[],f:"Más lento."},
+ atwocho:{n:"Around the world & ocho",en:"kettlebell around the world figure 8",q:"Calentamiento y agarre.",
+  c:["Alterná vueltas alrededor de la cintura con ochos entre las piernas, sin apoyar la pesa."],e:[],f:"Más liviana."},
+ halo:{n:"Halo",en:"kettlebell halo",q:"Movilidad de hombros.",
+  c:["Pesa agarrada de los cuernos, boca abajo.","Pasala alrededor de la cabeza cerca del cuello, en un sentido y en otro."],e:["Arquear la espalda."],f:"Más liviana."},
+ thruster:{n:"Thruster",en:"kettlebell thruster",q:"Cuerpo completo: sentadilla + press.",
+  c:["Desde rack, sentadilla profunda.","Al subir, usá ese impulso para llevar la pesa arriba en un solo movimiento.","Bajá a rack y encadená la siguiente."],e:["Hacer pausa entre sentadilla y press."],f:"Menos peso o goblet squat + press por separado."},
+ burpeecp:{n:"Burpee & clean & press",en:"kettlebell burpee clean and press",q:"Acondicionamiento de cuerpo completo.",
+  c:["Burpee con las manos al lado de la pesa.","Al volver arriba, clean de la pesa y press.","Bajala al piso y repetí."],e:[],f:"Solo el burpee al principio."},
+ flexbu:{n:"Flexión bottom-up",en:"kettlebell bottom up push up",q:"Pecho, tríceps y estabilidad de muñeca.",
+  c:["Flexiones con una mano sobre la pesa (asa) y la otra en el piso, o ambas.","Muñeca bien recta, todo el cuerpo en bloque.","Si la base de tu pesa es chica, mejor apoyate sobre el cuerpo de la pesa: puede girar."],e:["Cadera caída."],f:"Sobre el cuerpo de la pesa, o con rodillas apoyadas."},
+ flexpalmada:{n:"Flexión con palmada",en:"clap push up",q:"Potencia de pecho y brazos.",
+  c:["Flexión explosiva: empujá tan fuerte que las manos se despeguen y aplaudí.","Aterrizá con los codos un poco flexionados."],e:[],f:"Con rodillas apoyadas, o de pie contra la pared."},
+ desplantesalto:{n:"Desplante con salto",en:"jumping lunges",q:"Potencia de piernas y cardio.",
+  c:["Desde desplante, saltá y cambiá de pierna en el aire.","Aterrizá suave y encadená."],e:[],f:"Desplantes alternados sin salto."},
+ dominada:{n:"Dominada",en:"pull up",q:"Espalda y brazos.",
+  c:["Colgado de la barra, tirá hasta pasar el mentón.","Podés hacer 2 series con palmas hacia adelante y 2 hacia vos."],e:["Balancearse."],f:"Con un pie apoyado en una silla, o rows si no tenés barra."},
+ burpee:{n:"Burpee",en:"burpee",q:"Cardio y cuerpo completo.",
+  c:["Agachate, manos al piso, pies atrás a plancha, flexión, pies adelante y salto."],e:[],f:"Sin flexión ni salto."},
+ cps:{n:"Clean & press & squat",en:"kettlebell clean press squat",q:"Combinación de cuerpo completo para la escalera de la semana 10.",
+  c:["Escalera: primero subís de a 1 los cleans (1-1-1, 2-1-1, 3-1-1…) hasta agotarte, 20 s de descanso y el otro lado.","Después hacés lo mismo con el press (1-2-1, 1-3-1…) y después con el squat.","Al terminar el squat volvés a empezar con el clean hasta completar 10 minutos."],e:[],f:"Descansá 10 s en cada peldaño."},
+ piramide:{n:"Pirámide swing & thruster",en:"kettlebell swing thruster",q:"Acondicionamiento.",
+  c:["2 swings + 2 thrusters, descansá 2 s; 4+4, descansá 4 s; 6+6… subiendo de a 2.","Cuando no llegues a las repeticiones, empezá a bajar de a 2 con los mismos descansos.","Al llegar abajo, volvé a subir hasta completar 5 minutos.","Con una sola pesa: swing a una mano y thruster de un lado, descanso, y el otro lado."],e:[],f:"Swings y thrusters con dos manos."},
+};
+const L=(t,k)=>({t,k});
+const SIDES=n=>Array.from({length:n},(_,i)=>i%2?"Mano izquierda":"Mano derecha");
+const IV=(min,sides)=>({l:min+" min · 30/30",w:30,r:30,n:min,names:sides?SIDES(min):null,rl:0});
+const CNT=(secs,l)=>({l:l||(Math.floor(secs/60)+":"+String(secs%60).padStart(2,"0")),w:secs,n:1});
+const TABATA_SW=["Swing","Snatch izquierdo","Swing","Snatch derecho","Swing","Snatch izquierdo","Swing","Snatch derecho"];
+const CAL1=[L("2 rondas de:"),L("10 giros de cuello (5 por sentido)"),L("20 giros de brazos (10 por sentido)"),L("20 giros de hombros (10 por sentido)"),L("20 giros de muñecas (10 por sentido)"),L("15 squats sin peso"),L("10 levantamientos de cadera"),L("1 min de cuerda o trote en el lugar"),L("20 around the world","atw"),L("10 ochos (20 pases entre las piernas)","ocho")];
+const CAL2=[L("1 vuelta de:"),L("1 min de cuerda o trote en el lugar"),L("10 levantamientos de cadera"),L("1 min de around the world & ocho","atwocho"),L("5 halos por lado","halo"),L("15 squats sin peso"),L("10 windmills sin peso (5 por lado)","windmill"),L("1 min de cuerda o trote en el lugar")];
+const warm=d=>e("Calentamiento "+(d%2?2:1),1,"5–10 min · no cuenta para el %",{nc:1,u:"Hecho",m:null,it:d%2?CAL2:CAL1});
+const COOL=e("Enfriamiento y movilidad",1,"5–10 min de movimiento suave y estiramientos · no cuenta para el %",{nc:1,u:"Hecho",m:null,tm:[CNT(300,"5:00")]});
+const K=(n,s,d,k,o={})=>e(n,s,d,{k,...o});
+const S1MIN=K("Swing · máximo en 1 minuto",1,"anotá cuántos hiciste · al final, nunca antes del turco","swing",{u:"Serie",tm:[CNT(60)]});
+const PRAC=(n,k)=>K(n,1,"5–10 min de práctica de técnica, sin contar repeticiones",k,{u:"Práctica",m:null,tm:[CNT(300,"5:00")]});
+const day=(name,ex,note)=>({name,note,ex:ex.map((x,i)=>x)});
+const withWarm=days=>days.map((D,d)=>({...D,ex:[warm(d),...D.ex,COOL]}));
+const N_FUND="Orden: ejercicio inicial, swings, levantamientos turcos y al final el minuto de swings. Descansá ~1 min entre series, sin mirar el reloj. Pesa más liviana para practicar técnica.";
+const N_FUERZA="Bloque fuerza: 1 min de descanso entre series y 2 min entre ejercicios. Con una sola pesa, hacé un lado e inmediatamente el otro: eso es 1 serie (empezá por el lado más débil). Usá la pesa más pesada con la que llegues a las repeticiones. Si la sesión pasa de una hora, salteá el ejercicio corporal final.";
+const N_POT="Bloque potencia: cada repetición a máxima velocidad. 1 min entre series y 2 min entre ejercicios (más si lo necesitás). Si todavía no te sale el snatch, hacé high pull.";
+const KB=[
+ {w:1,note:N_FUND+" Más fácil: medio levantamiento turco; el minuto de swings en 2 × 30 s. Más difícil: swings 4×20 y turco 5×2 por lado.",days:withWarm([
+  day("Día 1",[K("Squat",4,"10 reps","squat"),K("Swing",4,"10 reps","swing"),K("Levantamiento turco",5,"1 por lado","turco"),S1MIN]),
+  day("Día 2",[K("Deadlift",4,"10 reps","deadlift"),K("Swing",4,"10 reps","swing"),K("Levantamiento turco",5,"1 por lado","turco"),S1MIN]),
+  day("Práctica",[PRAC("Swing a una mano","swing1"),PRAC("Clean","clean"),PRAC("Press","press")]),
+  day("Día 4",[K("Squat en rack",3,"8 reps por lado seguidas = 1 serie","squatrack"),K("Swing",4,"10 reps","swing"),K("Levantamiento turco",5,"1 por lado","turco"),S1MIN])])},
+ {w:2,note:"Igual que la semana 1 con más volumen. "+N_FUND+" Más difícil: swings 4×30, turco 5×4 por lado o lento con pausas de 2 s.",days:withWarm([
+  day("Día 1",[K("Deadlift maleta",3,"8 reps por lado seguidas = 1 serie","deadmaleta"),K("Swing",4,"15 reps","swing"),K("Levantamiento turco",5,"2 por lado","turco"),S1MIN]),
+  day("Día 2",[K("Squat",4,"10 reps","squat"),K("Swing",4,"15 reps","swing"),K("Levantamiento turco",5,"2 por lado","turco"),S1MIN]),
+  day("Práctica",[PRAC("Clean","clean"),PRAC("Press","press"),PRAC("Snatch","snatch")]),
+  day("Día 4",[K("Deadlift sumo",4,"10 reps","deadsumo"),K("Swing",4,"15 reps","swing"),K("Levantamiento turco",5,"2 por lado","turco"),S1MIN])])},
+ {w:3,note:N_FUERZA,days:withWarm([
+  day("Día 1",[K("Clean & press",5,"5 reps","cleanpress"),K("Row",5,"5 reps","row"),K("Levantamiento turco",3,"3 por lado","turco"),K("Swing a una mano",4,"10 por lado","swing1"),K("Flexión bottom-up",3,"8–10 reps","flexbu")]),
+  day("Día 2",[K("Squat",5,"10 reps","squat"),K("Desplante",5,"10 reps (5 por pierna)","desplante"),K("Squat en rack",3,"8 reps","squatrack"),K("Swing",4,"15 reps","swing"),K("Pistol",3,"2 por lado","pistol")]),
+  day("Día 3",[K("Press en el suelo",5,"5 reps","pressuelo"),K("Renegade row",4,"5 por lado","renegade"),K("Windmill",4,"5 por lado","windmill"),K("Swing a una mano",4,"10 por lado","swing1"),K("Dominada",4,"8–10 reps","dominada")]),
+  day("Día 4",[K("Deadlift",5,"10 reps","deadlift"),K("Squat en rack",5,"5 reps","squatrack"),K("Deadlift a una pierna",5,"5 por lado","dead1"),K("Levantamiento turco",5,"3 por lado","turco"),K("Desplante",4,"10 reps (5 por lado)","desplante")])])},
+ {w:4,note:N_FUERZA,days:withWarm([
+  day("Día 1",[K("Windmill",5,"5 por lado","windmill"),K("Row",5,"5 reps","row"),K("Russian twist",5,"12 (6 por lado)","russian"),K("Swing a una mano",4,"12 por lado","swing1"),K("Flexión bottom-up",3,"8–10 reps","flexbu")]),
+  day("Día 2",[K("Levantamiento turco",5,"2 por lado","turco"),K("Desplante",5,"10 reps (5 por pierna)","desplante"),K("Squat en rack",5,"10 reps","squatrack"),K("Russian twist",5,"12 (6 por lado)","russian"),K("Pistol",4,"2 por lado","pistol")]),
+  day("Día 3",[K("Press en el suelo",5,"5 reps","pressuelo"),K("Renegade row",5,"5 por lado","renegade"),K("Windmill",5,"5 por lado","windmill"),K("Press",5,"5 por lado","press"),K("Dominada",4,"8–10 reps","dominada")]),
+  day("Día 4",[K("Deadlift sumo",5,"5 reps","deadsumo"),K("Squat en rack",5,"5 reps","squatrack"),K("Deadlift maleta",5,"5 reps","deadmaleta"),K("Desplante lateral",3,"10 (5 por lado)","desplantelat"),K("Pistol",4,"2 por lado","pistol")])])},
+];
+const POT=withWarm([
+  day("Día 1",[K("Swing a una mano",3,"10 por lado","swing1"),K("Thruster",3,"10 reps","thruster"),K("Dead clean",3,"8 reps","deadclean"),K("Snatch",3,"10 reps","snatch"),K("Flexión con palmada",4,"10 reps","flexpalmada")]),
+  day("Día 2",[K("Squat con salto",4,"10 reps","squatsalto"),K("Deadlift high pull",4,"10 reps","deadhp"),K("Squat en rack",3,"10 reps","squatrack"),K("Desplante lateral",3,"10 (5 por lado)","desplantelat"),K("Desplante con salto",4,"20 (10 por pierna)","desplantesalto")]),
+  day("Día 3",[K("Dead clean",3,"8 por lado","deadclean"),K("Push press",5,"5 reps","pushpress"),K("Dead snatch",3,"5 por lado","deadsnatch"),K("Burpee & clean & press",3,"8 por lado","burpeecp"),K("Flexión con palmada",4,"10 reps","flexpalmada")]),
+  day("Día 4",[K("Power swing",4,"15 reps","powerswing"),K("Russian twist",5,"12 (6 por lado)","russian"),K("Clean & push press",5,"5 reps","cleanpushpress"),K("Thruster",3,"10 reps","thruster"),K("Desplante con salto",4,"20 (10 por pierna)","desplantesalto")])]);
+KB.push({w:5,note:N_POT,days:POT},{w:6,note:N_POT,days:POT});
+const R30=(names)=>({l:"Ronda · 30 s c/u",seq:[...names.map(n=>({label:n+" · derecha",secs:30,kind:"work"})),{label:"Cambio de mano",secs:30,kind:"rest"},...names.map(n=>({label:n+" · izquierda",secs:30,kind:"work"}))],n:1,r:30,rl:1});
+const R30L=(list)=>({l:"Ronda",seq:list.flatMap(([n,lados])=>lados?[{label:n+" · derecha",secs:30,kind:"work"},{label:n+" · izquierda",secs:30,kind:"work"}]:[{label:n,secs:60,kind:"work"}]),n:1,r:60,rl:1});
+const AMRAP=CNT(300,"5 min");
+const N_ACOND="Bloque acondicionamiento: intervalos, rondas y tabatas. Usá los temporizadores. 30/30 = 30 s de trabajo y 30 s de descanso; con una sola pesa, cambiás de mano en cada ciclo. Más fácil: 20 s de trabajo y 40 de descanso. Más difícil: 40/20.";
+const ACOND78=withWarm([
+  day("Día 1",[K("Levantamiento turco",1,"5 min por lado alternando lado en cada repetición · anotá cuántos","turco",{u:"Bloque",tm:[CNT(600,"10:00")]}),
+    K("Squat en rack",1,"4 min 30/30 · cambiá de mano cada ciclo · descanso previo 1 min","squatrack",{u:"Bloque",m:"reps totales",tm:[IV(4,1)]}),
+    K("Snatch",1,"4 min 30/30 · cambiá de mano cada ciclo · descanso previo 1 min","snatch",{u:"Bloque",m:"reps totales",tm:[IV(4,1)]}),
+    K("Burpees",1,"4 min 30/30 · anotá el total","burpee",{u:"Bloque",m:"burpees",tm:[IV(4)]})]),
+  day("Día 2",[K("Swing",1,"6 min 30/30 · a dos manos","swing",{u:"Bloque",m:"reps totales",tm:[IV(6)]}),
+    K("Thruster",1,"6 min 30/30 · cambiá de mano cada ciclo · descanso previo 1 min","thruster",{u:"Bloque",m:"reps totales",tm:[IV(6,1)]}),
+    K("Clean & press",1,"6 min 30/30 · cambiá de mano cada ciclo · descanso previo 1 min","cleanpress",{u:"Bloque",m:"reps totales",tm:[IV(6,1)]})]),
+  day("Día 3",[e("4 rondas · 30 s de cada ejercicio",4,"todo con una mano sin soltar la pesa, 30 s de descanso, la otra mano, 30 s de descanso",{u:"Ronda",m:null,
+    it:[L("High pull","highpull"),L("Clean & press","cleanpress"),L("Squat en rack","squatrack"),L("Swing a una mano","swing1")],tm:[R30(["High pull","Clean & press","Squat en rack","Swing 1 mano"])]})]),
+  day("Día 4",[e("4 rondas por repeticiones",4,"todo con una mano, posando la pesa solo para cambiar de mano; 30 s de descanso entre manos y rondas",{u:"Ronda",m:null,
+    it:[L("Swing a una mano × 5","swing1"),L("Snatch × 5","snatch"),L("Squat en rack × 5","squatrack"),L("Clean & press × 3","cleanpress"),L("Levantamiento turco × 1 (bajando desde el press)","turco")]})])]);
+KB.push({w:7,note:N_ACOND,days:ACOND78},{w:8,note:N_ACOND,days:ACOND78});
+KB.push({w:9,note:"Rondas sin descanso entre ejercicios ni entre cambios de mano. Más fácil: 20 s por lado. Más difícil: descansos a la mitad (salvo el tabata).",days:withWarm([
+  day("Día 1",[e("3 rondas · 30 s por lado",3,"1 min de descanso entre rondas",{u:"Ronda",m:null,
+    it:[L("Swing a una mano","swing1"),L("Squat en rack","squatrack"),L("Snatch","snatch"),L("Swing a una mano","swing1"),L("Squat en rack","squatrack")],
+    tm:[R30L([["Swing 1 mano",1],["Squat en rack",1],["Snatch",1],["Swing 1 mano",1],["Squat en rack",1]])]})]),
+  day("Día 2",[e("3 rondas · 30 s por lado",3,"anotá los burpees de cada ronda · 1 min de descanso entre rondas",{u:"Ronda",m:"burpees",
+    it:[L("Swing a una mano","swing1"),L("Push press","pushpress"),L("Burpees (1 min)","burpee"),L("Squat en rack","squatrack"),L("Row","row")],
+    tm:[R30L([["Swing 1 mano",1],["Push press",1],["Burpees",0],["Squat en rack",1],["Row",1]])]})]),
+  day("Día 3",[e("Máx. rondas en 5 min",1,"anotá las rondas · 2 min de descanso después",{u:"Bloque",m:"rondas",it:[L("Clean & press × 5","cleanpress"),L("Row × 5","row")],tm:[AMRAP]}),
+    e("Máx. rondas en 5 min",1,"anotá las rondas · 2 min de descanso después",{u:"Bloque",m:"rondas",it:[L("Squat × 5","squat"),L("Russian twist × 5","russian")],tm:[AMRAP]}),
+    e("Máx. rondas en 5 min",1,"anotá las rondas",{u:"Bloque",m:"rondas",it:[L("Renegade row × 5 por lado","renegade"),L("Swing × 15","swing")],tm:[AMRAP]})]),
+  day("Día 4",[e("Tabata swing / snatch",1,"8 × (20 s / 10 s) · 1 min de descanso después",{u:"Tabata",m:null,it:TABATA_SW.map(t=>L(t,/Snatch/.test(t)?"snatch":"swing")),tm:[{l:"Tabata",w:20,r:10,n:8,names:TABATA_SW}]}),
+    K("Thruster",1,"1 min (30 s por lado) · 1 min de descanso después","thruster",{u:"Bloque",tm:[{l:"1 min",w:30,n:2,names:SIDES(2)}]}),
+    K("Deadlift a una pierna",1,"2 min (1 min por pierna) · 1 min de descanso después","dead1",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Pierna derecha","Pierna izquierda"]}]}),
+    K("Around the world",1,"2 min (1 min por sentido, sin apoyar la pesa)","atw",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Sentido horario","Sentido antihorario"]}]})])])});
+KB.push({w:10,note:"Última semana: escaleras y pirámides. Tocá el nombre del ejercicio para ver cómo se arman.",days:withWarm([
+  day("Día 1",[K("Escalera clean & press & squat",1,"10 min · 20 s de descanso entre cambios de mano · 1 min de descanso después","cps",{u:"Bloque",m:null,tm:[CNT(600,"10:00")]}),
+    K("Tabata de power swing",1,"8 × (20 s / 10 s)","powerswing",{u:"Tabata",m:null,tm:[{l:"Tabata",w:20,r:10,n:8}]})]),
+  day("Día 2",[e("5 rondas",5,"todo con una mano sin soltar la pesa y después la otra · 30 s entre rondas · 1 min de descanso al final",{u:"Ronda",m:null,
+    it:[L("Clean × 4","clean"),L("Press × 2","press"),L("Squat en rack × 6","squatrack")]}),
+    e("3 rondas",3,"sin descanso entre ejercicios · 30 s entre rondas",{u:"Ronda",m:null,it:[L("Thruster × 5","thruster"),L("Deadlift maleta × 8","deadmaleta"),L("Renegade row × 4","renegade")]})]),
+  day("Día 3",[e("3 rondas",3,"burpee & clean & press de los dos lados antes de seguir · 30 s entre rondas · 1 min al final",{u:"Ronda",m:null,
+    it:[L("Burpee & clean & press × 5 por lado","burpeecp"),L("Deadlift sumo × 5","deadsumo"),L("Around the world & ocho 1 min","atwocho")]}),
+    K("Pirámide swing & thruster",1,"5 min · anotá hasta qué peldaño llegaste","piramide",{u:"Bloque",m:"peldaño máx.",tm:[AMRAP]})]),
+  day("Día 4",[e("Tabata swing / snatch",1,"8 × (20 s / 10 s) · 1 min de descanso después",{u:"Tabata",m:null,it:TABATA_SW.map(t=>L(t,/Snatch/.test(t)?"snatch":"swing")),tm:[{l:"Tabata",w:20,r:10,n:8,names:TABATA_SW}]}),
+    K("Thruster",1,"1 min (30 s por lado) · 1 min de descanso después","thruster",{u:"Bloque",tm:[{l:"1 min",w:30,n:2,names:SIDES(2)}]}),
+    K("Deadlift a una pierna",1,"2 min (1 min por pierna) · 1 min de descanso después","dead1",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Pierna derecha","Pierna izquierda"]}]}),
+    K("Around the world",1,"2 min (1 min por sentido, sin apoyar la pesa)","atw",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Sentido horario","Sentido antihorario"]}]})])])});
+const KB_REST="Semana 11: descarga. Descanso activo: practicá los ejercicios que más te costaron, sin series ni tiempos fijos y sin terminar cansado. Después podés arrancar otro ciclo.";
+
 const REST_NOTE="Semana 11: descanso activo. Caminatas largas, sesiones de flexibilidad, nada de alta intensidad.";
-const key=(w,d,i,c=ui.cycle)=>`c${c}-s${w}-d${d}-e${i}`;
+const PROGS={des:{t:"Desencadenado",sub:"Tocá la serie o anotá las reps · peso y variante por ejercicio",weeks:PROGRAM,rest:REST_NOTE,restLbl:"descanso",kp:"",ck:"desenc-v1-ciclo",dw:6},
+  kb:{t:"Kettlebell",sub:"Efecto Kettlebell · tocá el nombre del ejercicio para ver la técnica",weeks:KB,rest:KB_REST,restLbl:"descarga",kp:"kb-",ck:"desenc-kb-ciclo",dw:1}};
+const key=(w,d,i,c=ui.cycle,p=ui.prog)=>`${PROGS[p].kp}c${c}-s${w}-d${d}-e${i}`;
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z ]/g,"").replace(/\s+/g," ").trim();
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 // qué se anota en cada serie
-function metric(x){if(x.u==="Ronda"||x.u==="R")return null;if(/plancha/i.test(x.n)&&/min/.test(x.d))return "seg";return "reps"}
+function metric(x){if("m" in x)return x.m;if(x.u==="Ronda"||x.u==="R")return null;if(/plancha/i.test(x.n)&&/min/.test(x.d))return "seg";return "reps"}
 const numsOf=s=>(String(s||"").match(/\d+([.,]\d+)?/g)||[]).map(v=>parseFloat(v.replace(",",".")));
 const sumOf=s=>numsOf(s).reduce((a,b)=>a+b,0);
 
 let REG={}; // key -> {sets:[{ok,r}], peso, variante, fecha}
-const wIndex=w=>{const i=PROGRAM.findIndex(W=>W.w===w);return i<0?PROGRAM.length:i};
-let CYC=1;try{CYC=+localStorage.getItem("desenc-v1-ciclo")||1}catch(_){}
-let ui={view:"train",wi:wIndex(6),d:0,open:{},ex:null,cycle:CYC};
-try{const s=JSON.parse(localStorage.getItem("desenc-v1-ui"));if(s){if(typeof s.w==="number")ui.wi=wIndex(s.w);ui.d=s.d||0;ui.view=s.view||"train";ui.ex=s.ex||null}}catch(_){}
-const saveUI=()=>{try{localStorage.setItem("desenc-v1-ui",JSON.stringify({w:ui.wi<PROGRAM.length?PROGRAM[ui.wi].w:11,d:ui.d,view:ui.view,ex:ui.ex}))}catch(_){}};
+const wIndex=(w,P=PROGRAM)=>{const i=P.findIndex(W=>W.w===w);return i<0?P.length:i};
+const CYCS={des:1,kb:1};for(const p in PROGS){try{CYCS[p]=+localStorage.getItem(PROGS[p].ck)||1}catch(_){}}
+let ui={prog:"des",view:"train",wi:wIndex(6),d:0,open:{},ex:null,cycle:CYCS.des,pos:{des:{w:6,d:0},kb:{w:1,d:0}}};
+try{const s=JSON.parse(localStorage.getItem("desenc-v1-ui"));if(s){
+  if(s.pos)ui.pos={...ui.pos,...s.pos};else if(typeof s.w==="number")ui.pos.des={w:s.w,d:s.d||0};
+  ui.prog=PROGS[s.prog]?s.prog:"des";ui.view=s.view||"train";ui.ex=s.ex||null}}catch(_){}
+PROGRAM=PROGS[ui.prog].weeks;ui.wi=wIndex(ui.pos[ui.prog].w);ui.d=ui.pos[ui.prog].d||0;ui.cycle=CYCS[ui.prog];
+const saveUI=()=>{ui.pos[ui.prog]={w:ui.wi<PROGRAM.length?PROGRAM[ui.wi].w:11,d:ui.d};try{localStorage.setItem("desenc-v1-ui",JSON.stringify({prog:ui.prog,pos:ui.pos,view:ui.view,ex:ui.ex}))}catch(_){}};
+function switchProg(p){if(p===ui.prog)return;saveUI();ui.prog=p;PROGRAM=PROGS[p].weeks;ui.wi=wIndex(ui.pos[p].w);ui.d=ui.pos[p].d||0;ui.cycle=CYCS[p];ui.open={};saveUI();render();window.scrollTo(0,0)}
 
 // ---------- almacenamiento ----------
 let db=null,mode="local";const LKEY="desenc-v1-reg";
@@ -315,16 +543,16 @@ function persist(k){clearTimeout(timers[k]);
     catch(err){note("No se pudo guardar ("+(err&&err.code||"error")+"). Revisá la conexión.")}};
   queues[k]=(queues[k]||Promise.resolve()).then(run)}
 const persistLater=k=>{clearTimeout(timers[k]);timers[k]=setTimeout(()=>persist(k),700)};
-const cyclesPresent=()=>{const s=new Set([CYC]);Object.keys(REG).forEach(k=>{const m=/^c(\d+)-/.exec(k);if(m)s.add(+m[1])});return[...s].sort((a,b)=>a-b)};
-function setCycle(n){CYC=n;try{localStorage.setItem("desenc-v1-ciclo",String(n))}catch(_){}if(mode==="db")db.doc("meta/estado").set({ciclo:n}).catch(()=>{})}
+const cyclesPresent=(p=ui.prog)=>{const s=new Set([CYCS[p]]);const re=new RegExp("^"+PROGS[p].kp+"c(\\d+)-s");Object.keys(REG).forEach(k=>{const m=re.exec(k);if(m)s.add(+m[1])});return[...s].sort((a,b)=>a-b)};
+function setCycle(n,p=ui.prog){CYCS[p]=n;try{localStorage.setItem(PROGS[p].ck,String(n))}catch(_){}if(mode==="db")db.doc("meta/estado").set({ciclo:CYCS.des,cicloKb:CYCS.kb}).catch(()=>{})}
 const note=t=>{document.getElementById("syncNote").textContent=t};
 function setVal(k,x,s,patch){const cur=REG[k]||{};const sets=[];for(let j=0;j<x.s;j++)sets[j]={ok:!!(cur.sets&&cur.sets[j]&&cur.sets[j].ok),r:(cur.sets&&cur.sets[j]&&cur.sets[j].r)||""};
   Object.assign(sets[s],patch);const next={...cur,sets};if(!next.fecha&&sets.some(z=>z.ok||z.r))next.fecha=today();REG[k]=next}
 
 // ---------- progreso ----------
-function dayCount(wi,d){let t=0,n=0;PROGRAM[wi].days[d].ex.forEach((x,i)=>{if(x.x)return;const ss=(REG[key(PROGRAM[wi].w,d,i)]||{}).sets||[];
+function dayCount(wi,d,p=ui.prog,c=ui.cycle){const P=PROGS[p].weeks;let t=0,n=0;P[wi].days[d].ex.forEach((x,i)=>{if(x.x||x.nc)return;const ss=(REG[key(P[wi].w,d,i,c,p)]||{}).sets||[];
   for(let s=0;s<x.s;s++){t++;if(ss[s]&&ss[s].ok)n++}});return[n,t]}
-function weekCount(wi){let n=0,t=0;PROGRAM[wi].days.forEach((_,d)=>{const[a,b]=dayCount(wi,d);n+=a;t+=b});return[n,t]}
+function weekCount(wi,p=ui.prog,c=ui.cycle){let n=0,t=0;PROGS[p].weeks[wi].days.forEach((_,d)=>{const[a,b]=dayCount(wi,d,p,c);n+=a;t+=b});return[n,t]}
 const regText=(L,x)=>{const rs=(L.sets||[]).map(s=>s&&s.r).filter(Boolean);const m=metric(x);
   return [rs.length?rs.join(" · ")+(m==="seg"?" s":""):"",L.peso&&(/^\d+([.,]\d+)?$/.test(L.peso)?L.peso+" kg":L.peso),L.variante].filter(Boolean).join(" · ")};
 function prevReg(x,w){const t=norm(x.n);let best=null;
@@ -339,18 +567,20 @@ function render(){
   document.getElementById("vTrain").setAttribute("aria-selected",ui.view==="train");
   document.getElementById("vProg").setAttribute("aria-selected",ui.view==="prog");
   document.getElementById("train").hidden=ui.view!=="train";document.querySelector(".restbar").hidden=ui.view!=="train";document.getElementById("prog").hidden=ui.view!=="prog";
+  document.getElementById("pTitle").textContent=PROGS[ui.prog].t;document.getElementById("pSub").textContent=PROGS[ui.prog].sub;
+  document.getElementById("pDes").setAttribute("aria-pressed",ui.prog==="des");document.getElementById("pKb").setAttribute("aria-pressed",ui.prog==="kb");
   renderCycle();
   if(ui.wi>PROGRAM.length)ui.wi=0;
   const weeks=document.getElementById("weeks");weeks.innerHTML="";
   PROGRAM.forEach((W,wi)=>{const[n,t]=weekCount(wi);const b=el("button","wk"+(n===t?" complete":""));b.type="button";b.id="wk"+W.w;
     b.setAttribute("role","tab");b.setAttribute("aria-selected",wi===ui.wi);b.innerHTML=`<b>S${W.w}</b><span>${n===t?"✓":Math.round(n/t*100)+"%"}</span>`;
     b.onclick=()=>{ui.wi=wi;ui.d=0;saveUI();render()};weeks.appendChild(b)});
-  const rb=el("button","wk");rb.type="button";rb.id="wk11";rb.setAttribute("aria-selected",ui.wi===PROGRAM.length);rb.innerHTML="<b>S11</b><span>descanso</span>";
+  const rb=el("button","wk");rb.type="button";rb.id="wk11";rb.setAttribute("aria-selected",ui.wi===PROGRAM.length);rb.innerHTML="<b>S11</b><span>"+PROGS[ui.prog].restLbl+"</span>";
   rb.onclick=()=>{ui.wi=PROGRAM.length;saveUI();render()};weeks.appendChild(rb);
   const selW=weeks.querySelector('[aria-selected="true"]');if(selW)weeks.scrollLeft=selW.offsetLeft-weeks.offsetLeft-weeks.clientWidth/2+selW.offsetWidth/2;
   const tabs=document.getElementById("tabs"),list=document.getElementById("list");tabs.innerHTML="";list.innerHTML="";
   if(ui.wi===PROGRAM.length){tabs.hidden=true;document.getElementById("weekLbl").textContent="Semana 11";document.getElementById("weekPct").textContent="—";
-    document.getElementById("weekBar").style.width="100%";list.appendChild(el("div","info",REST_NOTE));renderReset();if(ui.view==="prog")renderProg();return}
+    document.getElementById("weekBar").style.width="100%";list.appendChild(el("div","info",PROGS[ui.prog].rest));renderReset();if(ui.view==="prog")renderProg();return}
   tabs.hidden=false;const W=PROGRAM[ui.wi];const[wn,wt]=weekCount(ui.wi);const pct=Math.round(wn/wt*100);
   document.getElementById("weekLbl").textContent="Semana "+W.w;document.getElementById("weekPct").textContent=pct+"%";document.getElementById("weekBar").style.width=pct+"%";
   W.days.forEach((D,d)=>{const[n,t]=dayCount(ui.wi,d);const b=el("button","tab"+(n===t?" complete":""));b.type="button";b.id="tab"+d;
@@ -364,10 +594,11 @@ function render(){
 }
 function card(w,d,i,x){
   const k=key(w,d,i),L=REG[k]||{};const ss=L.sets||[];const m=metric(x);
-  const c=el("article","ex");const head=el("div");head.appendChild(el("h3",null,x.n));
+  const c=el("article","ex");const head=el("div");const h3=el("h3");
+  if(x.k&&LIB[x.k]){const nb=el("button","exname",x.n);nb.type="button";nb.onclick=()=>openSheet(x.k);h3.appendChild(nb)}else h3.textContent=x.n;head.appendChild(h3);
   const unit=x.u||"Serie";const PL={Serie:"series",Superset:"supersets",Ronda:"rondas",R:"rondas"};
   head.appendChild(el("div","meta",(x.s>1&&unit!=="R"&&!/ronda/.test(x.d)?`${x.s} ${PL[unit]||""} · `:"")+x.d));
-  if(x.it){const ul=el("ul","items");x.it.forEach(t=>ul.appendChild(el("li",null,t)));head.appendChild(ul)}
+  if(x.it){const ul=el("ul","items");x.it.forEach(t=>{const li=el("li");if(typeof t==="string")li.textContent=t;else if(t.k&&LIB[t.k]){const b=el("button","lk",t.t);b.type="button";b.onclick=()=>openSheet(t.k);li.appendChild(b)}else li.textContent=t.t;ul.appendChild(li)});if(x.nc){const dt=el("details");dt.appendChild(el("summary","note","Ver ejercicios"));dt.appendChild(ul);head.appendChild(dt)}else head.appendChild(ul)}
   const pv=prevReg(x,w);if(pv){const p=el("div","prev");p.append("Anterior (S"+pv.w+"): ");p.appendChild(el("b",null,regText(pv.L,pv.y)));head.appendChild(p)}
   const pc=prevCycle(x,w);if(pc){const p=el("div","prev");p.appendChild(el("span","pc","Ciclo "+pc.c+", S"+pc.w+": "));p.appendChild(el("b",null,regText(pc.L,pc.y)));head.appendChild(p)}
   c.appendChild(head);
@@ -389,7 +620,7 @@ function card(w,d,i,x){
       if(j!=null){setVal(k,x,j,{ok:true,...(m==="seg"&&!(cur[j]&&cur[j].r)?{r:String(t.w)}:{})});persist(k);render()}});row.appendChild(tb)});
   const has=chipText(L);const chip=el("button","chip "+(has?"filled":"add"),has||"+ peso / variante");chip.type="button";chip.id="chip-"+k;
   chip.onclick=()=>{ui.open[k]=!ui.open[k];render();if(ui.open[k]){const f=document.getElementById("peso-"+k);f&&f.focus()}};
-  row.appendChild(chip);c.appendChild(row);
+  if(!x.nc)row.appendChild(chip);c.appendChild(row);
   if(ui.open[k]){const ed=el("div","editor");
     const mk=(field,label,ph)=>{const lb=el("label");lb.appendChild(el("span","label",label));const inp=el("input");inp.id=field+"-"+k;inp.value=L[field]||"";inp.placeholder=ph;inp.autocomplete="off";
       if(field==="peso")inp.inputMode="decimal";const commit=()=>{REG[k]={...(REG[k]||{}),[field]:inp.value.trim()}};
@@ -401,13 +632,21 @@ function card(w,d,i,x){
 function renderCycle(){const bar=document.getElementById("cycBar");bar.innerHTML="";const cs=cyclesPresent();
   if(cs.length<2){bar.appendChild(el("span","now","Ciclo "+ui.cycle))}
   else{const lb=el("label","label","Ciclo");lb.htmlFor="cycSel";const s=el("select");s.id="cycSel";
-    cs.forEach(c=>{const o=el("option",null,"Ciclo "+c+(c===CYC?" (actual)":""));o.value=c;s.appendChild(o)});s.value=ui.cycle;
-    s.onchange=()=>{ui.cycle=+s.value;render()};bar.append(lb,s);if(ui.cycle!==CYC)bar.appendChild(el("span","note","Estás viendo un ciclo anterior"))}
-  const box=document.getElementById("cycleBox");box.innerHTML="";if(ui.cycle!==CYC)return;
+    cs.forEach(c=>{const o=el("option",null,"Ciclo "+c+(c===CYCS[ui.prog]?" (actual)":""));o.value=c;s.appendChild(o)});s.value=ui.cycle;
+    s.onchange=()=>{ui.cycle=+s.value;render()};bar.append(lb,s);if(ui.cycle!==CYCS[ui.prog])bar.appendChild(el("span","note","Estás viendo un ciclo anterior"))}
+  const box=document.getElementById("cycleBox");box.innerHTML="";if(ui.cycle!==CYCS[ui.prog])return;
   const b=el("button","btn","Empezar ciclo nuevo");b.type="button";b.id="newCycBtn";
-  b.onclick=()=>{box.innerHTML="";box.appendChild(el("span","note","Arranca el ciclo "+(CYC+1)+" desde la semana 1. Lo del ciclo "+CYC+" queda guardado para comparar."));
-    const y=el("button","btn primary","Empezar ciclo "+(CYC+1));y.type="button";y.id="newCycYes";const n=el("button","btn","Cancelar");n.type="button";n.id="newCycNo";
-    y.onclick=()=>{setCycle(CYC+1);ui.cycle=CYC;ui.wi=0;ui.d=0;saveUI();render();window.scrollTo(0,0)};n.onclick=()=>renderCycle();box.append(y,n)};box.appendChild(b)}
+  b.onclick=()=>{box.innerHTML="";box.appendChild(el("span","note","Arranca el ciclo "+(CYCS[ui.prog]+1)+" desde la semana 1. Lo del ciclo "+CYCS[ui.prog]+" queda guardado para comparar."));
+    const y=el("button","btn primary","Empezar ciclo "+(CYCS[ui.prog]+1));y.type="button";y.id="newCycYes";const n=el("button","btn","Cancelar");n.type="button";n.id="newCycNo";
+    y.onclick=()=>{setCycle(CYCS[ui.prog]+1);ui.cycle=CYCS[ui.prog];ui.wi=0;ui.d=0;saveUI();render();window.scrollTo(0,0)};n.onclick=()=>renderCycle();box.append(y,n)};box.appendChild(b)}
+function openSheet(k){const X=LIB[k];if(!X)return;const $$=id=>document.getElementById(id);
+  $$("shTitle").textContent=X.n;$$("shQ").textContent=X.q||"";
+  const fill=(id,arr)=>{const o=$$(id);o.innerHTML="";(arr||[]).forEach(s=>o.appendChild(el("li",null,s)))};fill("shC",X.c);fill("shE",X.e);
+  $$("shEw").hidden=!(X.e&&X.e.length);$$("shF").textContent=X.f||"";$$("shFw").hidden=!X.f;
+  $$("shVid").href="https://www.youtube.com/results?search_query="+encodeURIComponent(X.en);$$("sheet").hidden=false;$$("shClose").focus()}
+document.getElementById("shClose").onclick=()=>{document.getElementById("sheet").hidden=true};
+document.getElementById("sheet").onclick=e=>{if(e.target.id==="sheet")e.target.hidden=true};
+document.querySelectorAll("#progSw button").forEach(b=>b.onclick=()=>switchProg(b.dataset.prog));
 function softRender(){setTimeout(()=>{const a=document.activeElement;if(!(a&&a.tagName==="INPUT"))render()},300)}
 function renderReset(){const box=document.getElementById("resetBox");box.innerHTML="";if(ui.wi>=PROGRAM.length)return;const W=PROGRAM[ui.wi];
   const b=el("button","btn","Reiniciar semana "+W.w);b.type="button";b.id="resetBtn";
@@ -415,13 +654,13 @@ function renderReset(){const box=document.getElementById("resetBox");box.innerHT
     y.onclick=()=>{W.days.forEach((D,d)=>D.ex.forEach((_,i)=>{const k=key(W.w,d,i);if(REG[k]){delete REG[k];persist(k)}}));render()};n.onclick=renderReset;box.append(y,n)};box.appendChild(b)}
 
 // ---------- render: progreso ----------
-function rows(){ // una fila por ejercicio-semana con datos
-  const out=[];cyclesPresent().forEach(c=>PROGRAM.forEach((W,wi)=>W.days.forEach((D,d)=>D.ex.forEach((x,i)=>{const L=REG[key(W.w,d,i,c)];if(!L||isEmpty(L))return;
+function rows(p=ui.prog){ // una fila por ejercicio-semana con datos
+  const out=[];cyclesPresent(p).forEach(c=>PROGS[p].weeks.forEach((W,wi)=>W.days.forEach((D,d)=>D.ex.forEach((x,i)=>{if(x.nc&&!x.m)return;const L=REG[key(W.w,d,i,c,p)];if(!L||isEmpty(L))return;
     const ss=(L.sets||[]).slice(0,x.s);const reps=ss.map(s=>s&&s.r||"");const nums=reps.map(sumOf);
-    out.push({c,k:key(W.w,d,i,c),w:W.w,d:d+1,x,name:x.n,id:norm(x.n),metric:metric(x),extra:!!x.x,fecha:L.fecha||"",done:ss.filter(s=>s&&s.ok).length,total:x.s,
+    out.push({p,c,k:key(W.w,d,i,c,p),w:W.w,d:d+1,x,name:x.n,id:norm(x.n),metric:metric(x),extra:!!x.x,fecha:L.fecha||"",done:ss.filter(s=>s&&s.ok).length,total:x.s,
       reps,sum:nums.reduce((a,b)=>a+b,0),max:Math.max(0,...nums),peso:L.peso||"",variante:L.variante||""})}))));return out}
 function renderProg(){
-  document.getElementById("avTitle").textContent="Avance por semana · ciclo "+ui.cycle;
+  document.getElementById("avTitle").textContent="Avance · "+PROGS[ui.prog].t+" · ciclo "+ui.cycle;
   const bars=document.getElementById("wkbars");bars.innerHTML="";
   PROGRAM.forEach((W,wi)=>{const[n,t]=weekCount(wi);const p=Math.round(n/t*100);const c=el("div");const i=el("i",p===100?"full":"");i.style.height=Math.max(2,p*.62)+"px";
     c.title=`Semana ${W.w}: ${p}%`;c.appendChild(el("span",null,p+"%"));c.appendChild(i);c.appendChild(el("span",null,"S"+W.w));bars.appendChild(c)});
@@ -457,21 +696,21 @@ let XLSXp=null;
 const loadXLSX=()=>XLSXp||(XLSXp=new Promise((res,rej)=>{const s=document.createElement("script");s.src="xlsx.full.min.js";s.onload=()=>res(window.XLSX);s.onerror=()=>{XLSXp=null;rej(new Error("load"))};document.head.appendChild(s)}));
 let downloads=null;
 document.getElementById("xlsBtn").onclick=async()=>{const msg=document.getElementById("xlsMsg");msg.textContent="Armando la planilla…";
-  try{const X=await loadXLSX();const R=rows();
+  try{const X=await loadXLSX();const R=[...rows("des"),...rows("kb")];const PN=p=>p==="kb"?"Efecto Kettlebell":"Desencadenado";
     const series=[];R.forEach(r=>{for(let s=0;s<r.total;s++){const S=((REG[r.k]||{}).sets||[])[s]||{};
-      if(!S.ok&&!S.r)continue;series.push({Ciclo:r.c,Semana:r.w,"Día":r.d,Ejercicio:r.name,Extra:r.extra?"sí":"",Serie:s+1,Hecha:S.ok?"sí":"",
+      if(!S.ok&&!S.r)continue;series.push({Programa:PN(r.p),Ciclo:r.c,Semana:r.w,"Día":r.d,Ejercicio:r.name,Extra:r.extra?"sí":"",Serie:s+1,Hecha:S.ok?"sí":"",
         Valor:numsOf(S.r).length===1?numsOf(S.r)[0]:(S.r||""),Unidad:S.r?(r.metric||""):"","Peso (kg)":/^\d+([.,]\d+)?$/.test(r.peso)?parseFloat(r.peso.replace(",",".")):r.peso,Variante:r.variante,Fecha:r.fecha})}});
-    const resumen=R.map(r=>({Ciclo:r.c,Semana:r.w,"Día":r.d,Ejercicio:r.name,Extra:r.extra?"sí":"","Series hechas":r.done,"Series plan":r.total,
+    const resumen=R.map(r=>({Programa:PN(r.p),Ciclo:r.c,Semana:r.w,"Día":r.d,Ejercicio:r.name,Extra:r.extra?"sí":"","Series hechas":r.done,"Series plan":r.total,
       Total:r.sum||"","Máximo":r.max||"",Unidad:r.metric||"","Peso (kg)":/^\d+([.,]\d+)?$/.test(r.peso)?parseFloat(r.peso.replace(",",".")):r.peso,Variante:r.variante,Fecha:r.fecha}));
-    const avance=PROGRAM.map((W,wi)=>{const[n,t]=weekCount(wi);return{Ciclo:ui.cycle,Semana:W.w,"Series hechas":n,"Series plan":t,"% completo":t?Math.round(n/t*1000)/1000:0}});
+    const avance=["des","kb"].flatMap(p=>PROGS[p].weeks.map((W,wi)=>{const[n,t]=weekCount(wi,p,CYCS[p]);return{Programa:PN(p),Ciclo:CYCS[p],Semana:W.w,"Series hechas":n,"Series plan":t,"% completo":t?Math.round(n/t*1000)/1000:0}}));
     const wb=X.utils.book_new();
     const add=(data,name,widths,hdr)=>{const ws=X.utils.json_to_sheet(data.length?data:[{}],hdr?{header:hdr}:undefined);ws["!cols"]=widths.map(w=>({wch:w}));X.utils.book_append_sheet(wb,ws,name);return ws};
-    add(series,"Series",[6,8,6,34,6,6,7,8,7,10,24,11],["Ciclo","Semana","Día","Ejercicio","Extra","Serie","Hecha","Valor","Unidad","Peso (kg)","Variante","Fecha"]);
-    add(resumen,"Resumen",[6,8,6,34,6,13,11,8,8,7,10,24,11],["Ciclo","Semana","Día","Ejercicio","Extra","Series hechas","Series plan","Total","Máximo","Unidad","Peso (kg)","Variante","Fecha"]);
-    const wsA=add(avance,"Avance semanal",[6,8,13,11,11],["Ciclo","Semana","Series hechas","Series plan","% completo"]);
-    for(let r=2;r<=avance.length+1;r++){const c=wsA["E"+r];if(c)c.z="0%"}
+    add(series,"Series",[18,6,8,6,34,6,6,7,8,7,10,24,11],["Programa","Ciclo","Semana","Día","Ejercicio","Extra","Serie","Hecha","Valor","Unidad","Peso (kg)","Variante","Fecha"]);
+    add(resumen,"Resumen",[18,6,8,6,34,6,13,11,8,8,7,10,24,11],["Programa","Ciclo","Semana","Día","Ejercicio","Extra","Series hechas","Series plan","Total","Máximo","Unidad","Peso (kg)","Variante","Fecha"]);
+    const wsA=add(avance,"Avance semanal",[18,6,8,13,11,11],["Programa","Ciclo","Semana","Series hechas","Series plan","% completo"]);
+    for(let r=2;r<=avance.length+1;r++){const c=wsA["F"+r];if(c)c.z="0%"}
     const buf=X.write(wb,{type:"array",bookType:"xlsx"});
-    const fname="Desencadenado progreso "+today()+".xlsx";const P=window.Capacitor&&window.Capacitor.Plugins;
+    const fname="Entrenamiento progreso "+today()+".xlsx";const P=window.Capacitor&&window.Capacitor.Plugins;
     if(P&&P.Filesystem&&P.Share&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()){
       let bin="";const u8=new Uint8Array(buf);for(let j=0;j<u8.length;j+=0x8000)bin+=String.fromCharCode.apply(null,u8.subarray(j,j+0x8000));
       const w=await P.Filesystem.writeFile({path:fname,data:btoa(bin),directory:"CACHE"});
@@ -481,7 +720,9 @@ document.getElementById("xlsBtn").onclick=async()=>{const msg=document.getElemen
 
 // ---------- temporizador ----------
 const PREP=5;
-function buildPhases(t){const ph=[{label:"Preparate",secs:PREP,kind:"prep"}];for(let r=0;r<t.n;r++){
+function buildPhases(t){const ph=[{label:"Preparate",secs:PREP,kind:"prep"}];
+  if(t.seq){for(let r=0;r<t.n;r++){t.seq.forEach((s,j)=>ph.push({...s,step:`${j+1} de ${t.seq.length}`}));if(t.r&&(r<t.n-1||t.rl))ph.push({label:"Descanso",secs:t.r,kind:"rest",step:""})}return ph}
+  for(let r=0;r<t.n;r++){
   ph.push({label:t.names?t.names[r]:(t.wname||(t.n>1?"Trabajo":"¡Dale!")),secs:t.w,kind:"work",step:t.n>1?`${r+1} de ${t.n}`:""});
   if(t.r&&(r<t.n-1||t.rl))ph.push({label:"Descanso",secs:t.r,kind:"rest",step:t.n>1?`${r+1} de ${t.n}`:""})}return ph}
 let TM=null,tick=null,wake=null,actx=null;const $=id=>document.getElementById(id);
@@ -508,20 +749,20 @@ $("tSkip").onclick=()=>{if(TM&&!TM.paused)nextPhase()};$("tStop").onclick=()=>st
 document.querySelectorAll("[data-rest]").forEach(b=>b.onclick=()=>{const s=+b.dataset.rest;startTimer("Descanso "+s+" s",[{label:"Descanso",secs:s,kind:"rest"}],null)});
 
 // ---------- copia de seguridad y migración ----------
-// formato viejo (versión anterior): {log:{"s6-d0-e0":{done:[...],peso,variante,t}}} -> ciclo 1
-function fromOld(log){const out={};Object.keys(log||{}).forEach(k=>{const m=/^s(\d+)-d(\d+)-e(\d+)$/.exec(k);if(!m)return;
-  const w=+m[1],d=+m[2],i=+m[3];const W=PROGRAM[wIndex(w)];const x=W&&W.days[d]&&W.days[d].ex[i];if(!x)return;const L=log[k]||{};const done=L.done||[];
+// formato viejo: {log:{"s6-d0-e0":{done:[...],peso,variante,t}}} -> Desencadenado ciclo 1
+function fromOld(log){const out={};const P=PROGS.des.weeks;Object.keys(log||{}).forEach(k=>{const m=/^s(\d+)-d(\d+)-e(\d+)$/.exec(k);if(!m)return;
+  const w=+m[1],d=+m[2],i=+m[3];const W=P[wIndex(w,P)];const x=W&&W.days[d]&&W.days[d].ex[i];if(!x)return;const L=log[k]||{};const done=L.done||[];
   let variante=(L.variante||"").trim();let reps=[];let mm;
   if((mm=/^(\d+)\s*reps?$/i.exec(variante))){reps=done.map(v=>v?mm[1]:"");variante=""}
   else if(/^\d+(\s+\d+)+$/.test(variante)){reps=variante.split(/\s+/);variante=""}
   const sets=[];for(let j=0;j<x.s;j++){const r=reps[j]||"";sets.push({ok:!!done[j]||!!r,r})}
   const f=L.t?new Date(L.t):null;const fecha=f?f.getFullYear()+"-"+String(f.getMonth()+1).padStart(2,"0")+"-"+String(f.getDate()).padStart(2,"0"):"";
   const nx={sets,peso:L.peso||"",variante,fecha};if(!isEmpty(nx))out["c1-"+k]=nx});return out}
-function exportText(){return JSON.stringify({app:"desencadenado",v:3,ciclo:CYC,reg:REG})}
+function exportText(){return JSON.stringify({app:"desencadenado",v:3,ciclo:CYCS.des,cicloKb:CYCS.kb,reg:REG})}
 function importText(txt){const o=JSON.parse(txt);if(!o||o.app!=="desencadenado")throw 0;
-  if(o.v===3&&o.reg&&typeof o.reg==="object"){REG=o.reg;if(o.ciclo)setCycle(o.ciclo)}
+  if(o.v===3&&o.reg&&typeof o.reg==="object"){REG=o.reg;if(o.ciclo)setCycle(o.ciclo,"des");if(o.cicloKb)setCycle(o.cicloKb,"kb")}
   else if(o.log&&typeof o.log==="object"){REG={...REG,...fromOld(o.log)}}
-  else throw 0;ui.cycle=CYC;saveLocal();render()}
+  else throw 0;ui.cycle=CYCS[ui.prog];saveLocal();render()}
 $("backupBtn").onclick=()=>{const box=$("backupBox");box.hidden=!box.hidden;if(!box.hidden){$("backupTxt").value=exportText();$("backupMsg").textContent=""}};
 $("copyBtn").onclick=async()=>{const t=$("backupTxt");try{await navigator.clipboard.writeText(t.value);$("backupMsg").textContent="Copiado."}
   catch(_){t.focus();t.select();$("backupMsg").textContent="Seleccionado: copialo con el menú del teclado."}};
@@ -529,7 +770,6 @@ $("restoreBtn").onclick=()=>{try{importText($("backupTxt").value.trim());$("back
 
 // ---------- arranque ----------
 loadLocal();
-// si en este celular estaba instalada la versión anterior, traer sus datos una sola vez
 try{const old=JSON.parse(localStorage.getItem("desenc-log-v2")||"null");if(old&&!localStorage.getItem("desenc-v1-migrado")){REG={...fromOld(old),...REG};saveLocal();localStorage.setItem("desenc-v1-migrado","1")}}catch(_){}
 render();note("Los datos se guardan en este celular. Hacé una copia de seguridad de vez en cuando.");
 </script>
