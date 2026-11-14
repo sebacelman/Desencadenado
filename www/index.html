@@ -38,7 +38,29 @@ h1 em{font-style:normal;color:var(--accent);font-size:1.1rem;vertical-align:top;
 .big{font-family:var(--display);font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap;text-align:right}
 .big small{display:block;font-family:var(--body);font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
-.progsw{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.progsw{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.dnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dnav b{font:700 1.25rem var(--display);text-transform:uppercase;letter-spacing:.04em;text-align:center;flex:1}
+.dnav button{min-width:44px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 1.2rem var(--display);cursor:pointer}
+.dnav button:disabled{opacity:.35;cursor:default}
+.dstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dstat div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.dstat b{display:block;font:700 1.8rem/1.1 var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.dstat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.heat{display:grid;grid-template-columns:repeat(16,1fr);grid-template-rows:repeat(7,auto);grid-auto-flow:column;gap:3px}
+.heat i{display:block;aspect-ratio:1;border-radius:3px;background:var(--line);max-width:100%}
+.heat i.p{background:var(--accent-soft);outline:1px solid var(--accent)}
+.heat i.f{background:var(--accent)}
+.heat i.x{background:transparent}
+.heat i.t{outline:2px solid var(--fg)}
+.legend{display:flex;gap:12px;align-items:center;font-size:.75rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.daydone{background:var(--done-soft);border:1px solid var(--done);color:var(--done);border-radius:12px;padding:10px 14px;font-weight:600;text-align:center}
+.ov.celeb .t-time{font-size:clamp(4rem,24vw,7rem);color:#fff}
+.ov.celeb .t-title{font-size:1.15rem;max-width:28ch;opacity:1}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.ov.celeb .t-time{animation:pop .6s ease-out}
+@media (prefers-reduced-motion:reduce){.ov.celeb .t-time{animation:none}}
 .progsw button{border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:var(--surface);color:var(--muted);font:700 1rem var(--display);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
 .progsw button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .exname{all:unset;cursor:pointer;font-size:1.02rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;text-decoration-thickness:2px}
@@ -153,8 +175,9 @@ td.num,th.num{text-align:right}
     <div class="big"><small id="weekLbl">Semana</small><span id="weekPct">0%</span></div>
   </header>
   <div class="progsw" id="progSw">
-    <button type="button" id="pDes" data-prog="des">Desencadenado</button>
+    <button type="button" id="pDes" data-prog="des">Desenc.</button>
     <button type="button" id="pKb" data-prog="kb">Kettlebell</button>
+    <button type="button" id="pDia" data-prog="dia">Diario</button>
   </div>
   <div class="views" role="tablist">
     <button type="button" id="vTrain" role="tab" aria-selected="true">Entrenar</button>
@@ -167,12 +190,29 @@ td.num,th.num{text-align:right}
     <div class="bar" aria-hidden="true"><i id="weekBar"></i></div>
     <nav class="weeks" role="tablist" id="weeks"></nav>
     <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div id="diaTop" hidden style="display:flex;flex-direction:column;gap:10px">
+      <div class="dnav"><button type="button" id="dPrev" aria-label="Día anterior">‹</button><b id="dLbl">Hoy</b><button type="button" id="dNext" aria-label="Día siguiente">›</button></div>
+    </div>
     <section class="list" id="list" aria-live="polite"></section>
+    <div class="panel" id="remBox" hidden>
+      <h2>Recordatorio</h2>
+      <div class="note" id="remTxt"></div>
+      <div class="row" id="remRow"></div>
+    </div>
     <div class="row" id="resetBox"></div>
     <div class="row" id="cycleBox"></div>
   </div>
 
   <div id="prog" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel" id="diaProg" hidden>
+      <h2>Rutina diaria</h2>
+      <div class="dstat"><div><b id="stCur">0</b><span>Racha actual</span></div><div><b id="stBest">0</b><span>Mejor racha</span></div><div><b id="stTot">0</b><span>Días en total</span></div></div>
+      <div class="label">Últimas 16 semanas</div>
+      <div class="heat" id="heat"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>completo</span><span><i style="background:var(--accent-soft);outline:1px solid var(--accent)"></i>a medias</span><span><i style="background:var(--line)"></i>sin registro</span></div>
+      <div class="label" style="margin-top:6px">Últimos 14 días</div>
+      <div class="tablewrap"><table id="diaTable"></table></div>
+    </div>
     <div class="panel">
       <h2 id="avTitle">Avance por semana</h2>
       <div class="wkbars" id="wkbars"></div>
@@ -187,7 +227,7 @@ td.num,th.num{text-align:right}
     </div>
     <div class="panel">
       <h2>Excel</h2>
-      <div class="note">Planilla con tres hojas: cada serie registrada, el resumen por ejercicio y semana, y el avance semanal.</div>
+      <div class="note">Planilla con cuatro hojas: cada serie registrada, el resumen por ejercicio y semana, la rutina diaria y el avance semanal.</div>
       <div class="row"><button class="btn primary" id="xlsBtn" type="button">Exportar Excel</button><span class="note" id="xlsMsg"></span></div>
     </div>
     <div class="panel">
@@ -217,6 +257,13 @@ td.num,th.num{text-align:right}
   <div id="shFw"><h4>Si te cuesta</h4><p id="shF"></p></div>
   <div class="row" style="margin-top:6px"><a class="btn primary" id="shVid" href="#" target="_blank" rel="noopener">Ver videos en YouTube</a><button class="btn" id="shClose" type="button">Cerrar</button></div>
 </div></div>
+
+<div class="ov done celeb" id="celeb" hidden role="dialog" aria-modal="true" aria-labelledby="cHead">
+  <div class="t-phase" id="cHead">¡Felicitaciones!</div>
+  <div class="t-time" id="cNum"></div>
+  <div class="t-title" id="cTxt"></div>
+  <div class="t-btns"><button type="button" class="solid" id="cOk">Seguir</button></div>
+</div>
 
 <div class="ov" id="timer" hidden>
   <div class="t-title" id="tTitle"></div>
@@ -507,10 +554,59 @@ KB.push({w:10,note:"Última semana: escaleras y pirámides. Tocá el nombre del 
     K("Thruster",1,"1 min (30 s por lado) · 1 min de descanso después","thruster",{u:"Bloque",tm:[{l:"1 min",w:30,n:2,names:SIDES(2)}]}),
     K("Deadlift a una pierna",1,"2 min (1 min por pierna) · 1 min de descanso después","dead1",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Pierna derecha","Pierna izquierda"]}]}),
     K("Around the world",1,"2 min (1 min por sentido, sin apoyar la pesa)","atw",{u:"Bloque",m:null,tm:[{l:"2 min",w:60,n:2,names:["Sentido horario","Sentido antihorario"]}]})])])});
+Object.assign(LIB,{
+ plancha:{n:"Plancha",en:"plank proper form",q:"Abdomen y todo el core: evita que la espalda se arquee.",
+  c:["Apoyo en antebrazos y puntas de pie, codos debajo de los hombros.","Cuerpo en línea recta de la cabeza a los talones.","Apretá glúteos y abdomen como si fueran a pegarte en la panza.","Respirá normal."],
+  e:["Cadera caída o muy levantada.","Mirar hacia adelante doblando el cuello."],f:"Con las rodillas apoyadas, o en tramos de 20 s."},
+ planchalat:{n:"Plancha lateral",en:"side plank",q:"Oblicuos y estabilidad lateral de la cadera.",
+  c:["De costado, apoyado en un antebrazo (codo debajo del hombro) y en el borde del pie.","Cadera arriba: cuerpo recto visto de frente.","Mano libre en la cintura o hacia el techo."],
+  e:["Dejar caer la cadera."],f:"Con la rodilla de abajo apoyada."},
+ rodillas:{n:"Elevaciones de rodillas colgado",en:"hanging knee raises",q:"Abdomen (sobre todo la parte baja) y agarre.",
+  c:["Colgado de la barra, brazos estirados y hombros activos (no flojos).","Subí las rodillas hacia el pecho enrollando la pelvis.","Bajá controlado, sin balancearte."],
+  e:["Hamacarse para subir.","Subir solo los muslos sin enrollar la pelvis."],f:"Acostado: elevaciones de piernas en el piso."},
+ flexprof:{n:"Flexiones profundas",en:"deficit push ups",q:"Pecho, tríceps y hombros, con más recorrido que la flexión normal.",
+  c:["Manos sobre dos apoyos (libros, pesas, agarraderas) para que el pecho baje más que las manos.","Cuerpo recto, codos a unos 45° del cuerpo.","Bajá hasta estirar bien el pecho y subí."],
+  e:["Cadera caída.","Codos abiertos a 90°."],f:"Flexiones normales o con rodillas apoyadas."}});
+const DIA_CORE=[
+ {n:"Plancha",s:1,d:"1 minuto",k:"plancha",m:"seg",tm:[{l:"1:00",w:60,n:1}]},
+ {n:"Swings",s:1,d:"20–30 reps · anotá la pesa en peso / variante",k:"swing",m:"reps"},
+ {n:"Plancha lateral",s:2,d:"30 s por lado",k:"planchalat",m:"seg",u:"Lado",tm:[{l:"30 s por lado",w:30,r:5,n:2,names:["Lado derecho","Lado izquierdo"]}]},
+ {n:"Elevaciones de rodillas colgado",s:1,d:"10–15 reps",k:"rodillas",m:"reps"}];
+const dayNum=ds=>{const[y,m,d]=ds.split("-").map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)};
+const dsOf=n=>{const d=new Date(n*864e5);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")};
+function diaPlan(ds){const n=dayNum(ds);return[
+ e("Sentadillas",1,"30 reps · cuando sean fáciles: bajada lenta, pausa abajo o con la pesa",{k:"squat",m:"reps"}),
+ e("Flexiones profundas",1,"10 reps · sumá 1 por semana hasta 15, después una variante más difícil",{k:"flexprof",m:"reps"}),
+ e("Dominadas · agarre "+(n%2?"prono":"supino"),2,"3 reps por serie · siempre 1 o 2 en reserva, nunca al fallo",{k:"dominada",m:"reps"}),
+ {...DIA_CORE[((n%4)+4)%4]}]}
+const dkey=(ds,i)=>"dia-"+ds+"-e"+i;
+function dayState(ds){const P=diaPlan(ds);let n=0,t=0;P.forEach((x,i)=>{const ss=(REG[dkey(ds,i)]||{}).sets||[];for(let s=0;s<x.s;s++){t++;if(ss[s]&&ss[s].ok)n++}});return n===0?0:n===t?2:1}
+function diaStats(){const T=dayNum(today());let cur=0;let d=dayState(dsOf(T))===2?T:T-1;while(dayState(dsOf(d))===2){cur++;d--}
+  const dates=new Set();Object.keys(REG).forEach(k=>{const m=/^dia-(\d{4}-\d\d-\d\d)-e\d$/.exec(k);if(m)dates.add(m[1])});
+  const done=[...dates].filter(ds=>dayState(ds)===2).map(dayNum).sort((a,b)=>a-b);let best=0,run=0,prev=null;done.forEach(n=>{run=prev!==null&&n===prev+1?run+1:1;best=Math.max(best,run);prev=n});
+  return{cur,best,tot:done.length,start:cur?dsOf(d+1):null}}
+function prevDia(x,i,k){const m=/^dia-(\d{4}-\d\d-\d\d)-e\d$/.exec(k);if(!m)return null;let n=dayNum(m[1]);
+  for(let j=1;j<=60;j++){const ds=dsOf(n-j);const y=diaPlan(ds)[i];if(y.k!==x.k)continue;const L=REG[dkey(ds,i)];if(L&&regText(L,y))return{lbl:j===1?"ayer":ds.slice(8)+"/"+ds.slice(5,7),L,y}}return null}
+const HITOS={1:"Primer día. Lo más difícil es empezar.",3:"Tres días seguidos. Arrancó el hábito.",7:"Una semana completa, todos los días.",14:"Dos semanas sin cortar.",21:"21 días seguidos. Ya es parte de tu rutina.",
+ 30:"Un mes entero, todos los días.",50:"50 días de corrido.",60:"Dos meses seguidos.",90:"Tres meses sin fallar un día.",100:"100 días de corrido. Pocos llegan acá.",150:"150 días seguidos.",
+ 180:"Medio año, todos los días.",200:"200 días de corrido.",250:"250 días seguidos.",300:"300 días de corrido.",365:"Un año completo, todos los días.",500:"500 días de corrido.",730:"Dos años sin cortar.",1000:"1000 días de corrido."};
+const HITOS_TOT={50:"50 días en total con la rutina completa.",100:"100 días en total con la rutina completa.",250:"250 días en total.",500:"500 días en total.",1000:"1000 días en total."};
+let celebrated={};try{celebrated=JSON.parse(localStorage.getItem("dia-hitos"))||{}}catch(_){}
+const REM={supported:false,on:false,toggle:null};
+let diaCheckT=null;
+function diaChanged(){clearTimeout(diaCheckT);diaCheckT=setTimeout(()=>{const st=diaStats();const td=today();
+  if(dayState(td)===2){let msg=null,num=null;
+    if(HITOS[st.cur]&&!celebrated["s"+st.cur+"@"+st.start]){msg=HITOS[st.cur];num=st.cur;celebrated["s"+st.cur+"@"+st.start]=1}
+    else if(HITOS_TOT[st.tot]&&!celebrated["t"+st.tot]){msg=HITOS_TOT[st.tot];num=st.tot;celebrated["t"+st.tot]=1}
+    if(msg){try{localStorage.setItem("dia-hitos",JSON.stringify(celebrated))}catch(_){}celebrate(num,msg)}}
+  if(window.onDiaChanged)window.onDiaChanged()},400)}
+function celebrate(num,msg){const c=document.getElementById("celeb");document.getElementById("cNum").textContent=num+(num===1?" día":" días");document.getElementById("cTxt").textContent=msg;c.hidden=false;
+  try{beep(990,.18);setTimeout(()=>beep(1320,.18),180);setTimeout(()=>beep(1760,.4),360)}catch(_){}try{navigator.vibrate&&navigator.vibrate([100,60,100,60,300])}catch(_){}document.getElementById("cOk").focus()}
 const KB_REST="Semana 11: descarga. Descanso activo: practicá los ejercicios que más te costaron, sin series ni tiempos fijos y sin terminar cansado. Después podés arrancar otro ciclo.";
 
 const REST_NOTE="Semana 11: descanso activo. Caminatas largas, sesiones de flexibilidad, nada de alta intensidad.";
 const PROGS={des:{t:"Desencadenado",sub:"Tocá la serie o anotá las reps · peso y variante por ejercicio",weeks:PROGRAM,rest:REST_NOTE,restLbl:"descanso",kp:"",ck:"desenc-v1-ciclo",dw:6},
+  dia:{t:"Diario",sub:"Rutina base de todos los días · 5 a 10 minutos",weeks:[],rest:"",restLbl:"",kp:"dia-x-",ck:"desenc-dia-ciclo",dw:1},
   kb:{t:"Kettlebell",sub:"Efecto Kettlebell · tocá el nombre del ejercicio para ver la técnica",weeks:KB,rest:KB_REST,restLbl:"descarga",kp:"kb-",ck:"desenc-kb-ciclo",dw:1}};
 const key=(w,d,i,c=ui.cycle,p=ui.prog)=>`${PROGS[p].kp}c${c}-s${w}-d${d}-e${i}`;
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z ]/g,"").replace(/\s+/g," ").trim();
@@ -523,7 +619,7 @@ const sumOf=s=>numsOf(s).reduce((a,b)=>a+b,0);
 let REG={}; // key -> {sets:[{ok,r}], peso, variante, fecha}
 const wIndex=(w,P=PROGRAM)=>{const i=P.findIndex(W=>W.w===w);return i<0?P.length:i};
 const CYCS={des:1,kb:1};for(const p in PROGS){try{CYCS[p]=+localStorage.getItem(PROGS[p].ck)||1}catch(_){}}
-let ui={prog:"des",view:"train",wi:wIndex(6),d:0,open:{},ex:null,cycle:CYCS.des,pos:{des:{w:6,d:0},kb:{w:1,d:0}}};
+let ui={diaDate:null,prog:"des",view:"train",wi:wIndex(6),d:0,open:{},ex:null,cycle:CYCS.des,pos:{des:{w:6,d:0},kb:{w:1,d:0},dia:{w:1,d:0}}};
 try{const s=JSON.parse(localStorage.getItem("desenc-v1-ui"));if(s){
   if(s.pos)ui.pos={...ui.pos,...s.pos};else if(typeof s.w==="number")ui.pos.des={w:s.w,d:s.d||0};
   ui.prog=PROGS[s.prog]?s.prog:"des";ui.view=s.view||"train";ui.ex=s.ex||null}}catch(_){}
@@ -537,7 +633,7 @@ const loadLocal=()=>{try{REG=JSON.parse(localStorage.getItem(LKEY))||{}}catch(_)
 const saveLocal=()=>{try{localStorage.setItem(LKEY,JSON.stringify(REG))}catch(_){}};
 const queues={},timers={};
 const isEmpty=b=>!(b.sets||[]).some(s=>s&&(s.ok||s.r))&&!b.peso&&!b.variante;
-function persist(k){clearTimeout(timers[k]);
+function persist(k){clearTimeout(timers[k]);if(k.startsWith("dia-"))diaChanged();
   if(mode!=="db"){saveLocal();return}
   const run=async()=>{const b=REG[k];try{if(!b||isEmpty(b))await db.doc("registros/"+k).delete();else await db.doc("registros/"+k).set({...b,t:Date.now()})}
     catch(err){note("No se pudo guardar ("+(err&&err.code||"error")+"). Revisá la conexión.")}};
@@ -557,7 +653,7 @@ const regText=(L,x)=>{const rs=(L.sets||[]).map(s=>s&&s.r).filter(Boolean);const
   return [rs.length?rs.join(" · ")+(m==="seg"?" s":""):"",L.peso&&(/^\d+([.,]\d+)?$/.test(L.peso)?L.peso+" kg":L.peso),L.variante].filter(Boolean).join(" · ")};
 function prevReg(x,w){const t=norm(x.n);let best=null;
   PROGRAM.forEach(W=>{if(W.w>=w)return;W.days.forEach((D,d)=>D.ex.forEach((y,i)=>{if(norm(y.n)!==t)return;const L=REG[key(W.w,d,i)];if(L&&regText(L,y))best={w:W.w,L,y}}))});return best}
-function prevCycle(x,w){const t=norm(x.n);const W=PROGRAM[wIndex(w)];if(!W)return null;
+function prevCycle(x,w){if(ui.prog==="dia")return null;const t=norm(x.n);const W=PROGRAM[wIndex(w)];if(!W)return null;
   for(let c=ui.cycle-1;c>=1;c--){for(let d=0;d<W.days.length;d++){const i=W.days[d].ex.findIndex(y=>norm(y.n)===t);if(i<0)continue;const L=REG[key(w,d,i,c)];if(L&&regText(L,W.days[d].ex[i]))return{c,w,L,y:W.days[d].ex[i]}}}return null}
 const chipText=L=>[L.peso&&(/^\d+([.,]\d+)?$/.test(L.peso)?L.peso+" kg":L.peso),L.variante].filter(Boolean).join(" · ");
 
@@ -568,7 +664,10 @@ function render(){
   document.getElementById("vProg").setAttribute("aria-selected",ui.view==="prog");
   document.getElementById("train").hidden=ui.view!=="train";document.querySelector(".restbar").hidden=ui.view!=="train";document.getElementById("prog").hidden=ui.view!=="prog";
   document.getElementById("pTitle").textContent=PROGS[ui.prog].t;document.getElementById("pSub").textContent=PROGS[ui.prog].sub;
-  document.getElementById("pDes").setAttribute("aria-pressed",ui.prog==="des");document.getElementById("pKb").setAttribute("aria-pressed",ui.prog==="kb");
+  document.getElementById("pDes").setAttribute("aria-pressed",ui.prog==="des");document.getElementById("pKb").setAttribute("aria-pressed",ui.prog==="kb");document.getElementById("pDia").setAttribute("aria-pressed",ui.prog==="dia");
+  const isDia=ui.prog==="dia";["cycBar","weeks","tabs","resetBox","cycleBox"].forEach(id=>document.getElementById(id).hidden=isDia);
+  document.getElementById("weekBar").parentElement.hidden=isDia;document.getElementById("diaTop").hidden=!isDia;document.getElementById("remBox").hidden=!isDia;
+  if(isDia){renderDia();if(ui.view==="prog")renderProg();return}
   renderCycle();
   if(ui.wi>PROGRAM.length)ui.wi=0;
   const weeks=document.getElementById("weeks");weeks.innerHTML="";
@@ -592,14 +691,14 @@ function render(){
   let extra=false;D.ex.forEach((x,i)=>{if(x.x&&!extra){extra=true;list.appendChild(el("div","divider","Ejercicio extra · opcional"))}list.appendChild(card(W.w,d,i,x))});
   renderReset();if(ui.view==="prog")renderProg();
 }
-function card(w,d,i,x){
-  const k=key(w,d,i),L=REG[k]||{};const ss=L.sets||[];const m=metric(x);
+function card(w,d,i,x,kk){
+  const k=kk||key(w,d,i),L=REG[k]||{};const ss=L.sets||[];const m=metric(x);
   const c=el("article","ex");const head=el("div");const h3=el("h3");
   if(x.k&&LIB[x.k]){const nb=el("button","exname",x.n);nb.type="button";nb.onclick=()=>openSheet(x.k);h3.appendChild(nb)}else h3.textContent=x.n;head.appendChild(h3);
   const unit=x.u||"Serie";const PL={Serie:"series",Superset:"supersets",Ronda:"rondas",R:"rondas"};
   head.appendChild(el("div","meta",(x.s>1&&unit!=="R"&&!/ronda/.test(x.d)?`${x.s} ${PL[unit]||""} · `:"")+x.d));
   if(x.it){const ul=el("ul","items");x.it.forEach(t=>{const li=el("li");if(typeof t==="string")li.textContent=t;else if(t.k&&LIB[t.k]){const b=el("button","lk",t.t);b.type="button";b.onclick=()=>openSheet(t.k);li.appendChild(b)}else li.textContent=t.t;ul.appendChild(li)});if(x.nc){const dt=el("details");dt.appendChild(el("summary","note","Ver ejercicios"));dt.appendChild(ul);head.appendChild(dt)}else head.appendChild(ul)}
-  const pv=prevReg(x,w);if(pv){const p=el("div","prev");p.append("Anterior (S"+pv.w+"): ");p.appendChild(el("b",null,regText(pv.L,pv.y)));head.appendChild(p)}
+  const pv=ui.prog==="dia"?prevDia(x,i,k):prevReg(x,w);if(pv){const p=el("div","prev");p.append("Anterior ("+(pv.lbl||"S"+pv.w)+"): ");p.appendChild(el("b",null,regText(pv.L,pv.y)));head.appendChild(p)}
   const pc=prevCycle(x,w);if(pc){const p=el("div","prev");p.appendChild(el("span","pc","Ciclo "+pc.c+", S"+pc.w+": "));p.appendChild(el("b",null,regText(pc.L,pc.y)));head.appendChild(p)}
   c.appendChild(head);
   const sets=el("div","sets");let all=true;
@@ -629,6 +728,30 @@ function card(w,d,i,x){
     ed.appendChild(mk("peso","Peso (kg)","ej. 10"));ed.appendChild(mk("variante","Variante","ej. pies elevados, mochila"));c.appendChild(ed)}
   return c;
 }
+function dLabel(ds){const n=dayNum(ds),T=dayNum(today());if(n===T)return"Hoy";if(n===T-1)return"Ayer";
+  const d=new Date(n*864e5);return["dom","lun","mar","mié","jue","vie","sáb"][d.getUTCDay()]+" "+d.getUTCDate()+"/"+(d.getUTCMonth()+1)}
+function renderDia(){if(!ui.diaDate)ui.diaDate=today();const ds=ui.diaDate,T=dayNum(today());
+  const st=diaStats();document.getElementById("weekLbl").textContent="Racha";document.getElementById("weekPct").textContent=st.cur+(st.cur===1?" día":" días");
+  document.getElementById("dLbl").textContent=dLabel(ds);document.getElementById("dNext").disabled=dayNum(ds)>=T;
+  const list=document.getElementById("list");list.innerHTML="";
+  if(dayState(ds)===2)list.appendChild(el("div","daydone",dayNum(ds)===T?"Rutina de hoy completa. Racha: "+st.cur+(st.cur===1?" día":" días")+".":"Día completo."));
+  else if(dayNum(ds)===T&&st.cur>0)list.appendChild(el("div","info","Llevás "+st.cur+(st.cur===1?" día":" días")+" seguidos. Completá los 4 ejercicios de hoy para sumar uno más."));
+  else if(dayNum(ds)===T)list.appendChild(el("div","info","Los 4 ejercicios, en circuito y con el descanso que necesites. Un día cuenta cuando completás todas las series."));
+  diaPlan(ds).forEach((x,i)=>list.appendChild(card(null,null,i,x,dkey(ds,i))));
+  const rt=document.getElementById("remTxt"),rr=document.getElementById("remRow");rr.innerHTML="";
+  if(!REM.supported){rt.textContent="El aviso de las 21:00 funciona en la app del celular."}
+  else{rt.textContent=REM.denied?"Android no dio permiso para mostrar notificaciones. Activalo en Ajustes > Aplicaciones > Desencadenado > Notificaciones y volvé a tocar el botón.":REM.on?"Activado: si a las 21:00 no registraste la rutina del día, te llega un aviso.":"Desactivado. Activalo para recibir un aviso a las 21:00 los días que no hayas registrado la rutina.";
+    const b=el("button","btn"+(REM.on?"":" primary"),REM.on?"Desactivar aviso":"Activar aviso de las 21:00");b.type="button";b.id="remBtn";b.onclick=async()=>{await REM.toggle();render()};rr.appendChild(b)}}
+document.getElementById("dPrev").onclick=()=>{ui.diaDate=dsOf(dayNum(ui.diaDate||today())-1);render()};
+document.getElementById("dNext").onclick=()=>{const n=dayNum(ui.diaDate||today())+1;if(n<=dayNum(today())){ui.diaDate=dsOf(n);render()}};
+document.getElementById("cOk").onclick=()=>{document.getElementById("celeb").hidden=true};
+function renderProgDia(){const st=diaStats();document.getElementById("stCur").textContent=st.cur;document.getElementById("stBest").textContent=st.best;document.getElementById("stTot").textContent=st.tot;
+  const h=document.getElementById("heat");h.innerHTML="";const T=dayNum(today());const dow=(new Date(T*864e5).getUTCDay()+6)%7;const start=T-dow-15*7;
+  for(let n=start;n<start+16*7;n++){const i=el("i");if(n>T)i.className="x";else{const s=dayState(dsOf(n));i.className=s===2?"f":s===1?"p":"";if(n===T)i.className+=" t"}i.title=dsOf(n);h.appendChild(i)}
+  const tb=document.getElementById("diaTable");tb.innerHTML="";const tr0=el("tr");["Fecha","Sentad.","Flex.","Domin.","Core"].forEach(x=>tr0.appendChild(el("th",null,x)));tb.appendChild(tr0);
+  for(let j=0;j<14;j++){const ds=dsOf(T-j);const P=diaPlan(ds);const tr=el("tr");tr.appendChild(el("td",null,dLabel(ds)));
+    const SH={plancha:"Plancha",swing:"Swings",planchalat:"P. lateral",rodillas:"Rodillas"};
+    P.forEach((x,i)=>{const L=REG[dkey(ds,i)]||{};const ok=(L.sets||[]).slice(0,x.s).filter(z=>z&&z.ok).length;const v=regText(L,x)||(ok?(ok===x.s?"✓":ok+"/"+x.s):"");tr.appendChild(el("td",null,i===3?(v?SH[x.k]+" "+v:""):v))});tb.appendChild(tr)}}
 function renderCycle(){const bar=document.getElementById("cycBar");bar.innerHTML="";const cs=cyclesPresent();
   if(cs.length<2){bar.appendChild(el("span","now","Ciclo "+ui.cycle))}
   else{const lb=el("label","label","Ciclo");lb.htmlFor="cycSel";const s=el("select");s.id="cycSel";
@@ -659,7 +782,9 @@ function rows(p=ui.prog){ // una fila por ejercicio-semana con datos
     const ss=(L.sets||[]).slice(0,x.s);const reps=ss.map(s=>s&&s.r||"");const nums=reps.map(sumOf);
     out.push({p,c,k:key(W.w,d,i,c,p),w:W.w,d:d+1,x,name:x.n,id:norm(x.n),metric:metric(x),extra:!!x.x,fecha:L.fecha||"",done:ss.filter(s=>s&&s.ok).length,total:x.s,
       reps,sum:nums.reduce((a,b)=>a+b,0),max:Math.max(0,...nums),peso:L.peso||"",variante:L.variante||""})}))));return out}
-function renderProg(){
+function renderProg(){const isDia=ui.prog==="dia";document.getElementById("diaProg").hidden=!isDia;
+  document.getElementById("wkbars").closest(".panel").hidden=isDia;document.getElementById("exSel").closest(".panel").hidden=isDia;
+  if(isDia){renderProgDia();return}
   document.getElementById("avTitle").textContent="Avance · "+PROGS[ui.prog].t+" · ciclo "+ui.cycle;
   const bars=document.getElementById("wkbars");bars.innerHTML="";
   PROGRAM.forEach((W,wi)=>{const[n,t]=weekCount(wi);const p=Math.round(n/t*100);const c=el("div");const i=el("i",p===100?"full":"");i.style.height=Math.max(2,p*.62)+"px";
@@ -707,6 +832,9 @@ document.getElementById("xlsBtn").onclick=async()=>{const msg=document.getElemen
     const add=(data,name,widths,hdr)=>{const ws=X.utils.json_to_sheet(data.length?data:[{}],hdr?{header:hdr}:undefined);ws["!cols"]=widths.map(w=>({wch:w}));X.utils.book_append_sheet(wb,ws,name);return ws};
     add(series,"Series",[18,6,8,6,34,6,6,7,8,7,10,24,11],["Programa","Ciclo","Semana","Día","Ejercicio","Extra","Serie","Hecha","Valor","Unidad","Peso (kg)","Variante","Fecha"]);
     add(resumen,"Resumen",[18,6,8,6,34,6,13,11,8,8,7,10,24,11],["Programa","Ciclo","Semana","Día","Ejercicio","Extra","Series hechas","Series plan","Total","Máximo","Unidad","Peso (kg)","Variante","Fecha"]);
+    const diaRows=[];Object.keys(REG).sort().forEach(k=>{const m=/^dia-(\d{4}-\d\d-\d\d)-e(\d)$/.exec(k);if(!m)return;const x=diaPlan(m[1])[+m[2]];const L=REG[k];
+      (L.sets||[]).slice(0,x.s).forEach((S,s)=>{if(!S||(!S.ok&&!S.r))return;const nv=numsOf(S.r);diaRows.push({Fecha:m[1],Ejercicio:x.n,Serie:s+1,Hecha:S.ok?"sí":"",Valor:nv.length===1?nv[0]:(S.r||""),Unidad:S.r?x.m:"","Peso (kg)":/^\d+([.,]\d+)?$/.test(L.peso||"")?parseFloat(L.peso.replace(",",".")):(L.peso||""),Variante:L.variante||""})})});
+    add(diaRows,"Diario",[11,34,6,7,8,7,10,24],["Fecha","Ejercicio","Serie","Hecha","Valor","Unidad","Peso (kg)","Variante"]);
     const wsA=add(avance,"Avance semanal",[18,6,8,13,11,11],["Programa","Ciclo","Semana","Series hechas","Series plan","% completo"]);
     for(let r=2;r<=avance.length+1;r++){const c=wsA["F"+r];if(c)c.z="0%"}
     const buf=X.write(wb,{type:"array",bookType:"xlsx"});
@@ -767,6 +895,25 @@ $("backupBtn").onclick=()=>{const box=$("backupBox");box.hidden=!box.hidden;if(!
 $("copyBtn").onclick=async()=>{const t=$("backupTxt");try{await navigator.clipboard.writeText(t.value);$("backupMsg").textContent="Copiado."}
   catch(_){t.focus();t.select();$("backupMsg").textContent="Seleccionado: copialo con el menú del teclado."}};
 $("restoreBtn").onclick=()=>{try{importText($("backupTxt").value.trim());$("backupMsg").textContent="Datos cargados."}catch(_){$("backupMsg").textContent="Ese texto no es una copia válida de la app."}};
+
+// ---------- recordatorio de las 21:00 (solo app) ----------
+(function(){const C=window.Capacitor;const LN=C&&C.Plugins&&C.Plugins.LocalNotifications;if(!LN||!(C.isNativePlatform&&C.isNativePlatform()))return;
+  REM.supported=true;try{REM.on=localStorage.getItem("dia-recordatorio")==="1"}catch(_){}
+  async function schedule(){try{
+    const pend=await LN.getPending();if(pend&&pend.notifications&&pend.notifications.length)await LN.cancel({notifications:pend.notifications.map(n=>({id:n.id}))});
+    if(!REM.on)return;const now=new Date();const st=diaStats();const hecho=dayState(today())===2;const list=[];
+    for(let i=0;i<30;i++){const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i,21,0,0);if(d<=now)continue;if(i===0&&hecho)continue;
+      const racha=i===0?st.cur:0;
+      list.push({id:2100+i,title:"Rutina diaria",body:racha>0?"Todavía no registraste la rutina de hoy. Llevás "+racha+(racha===1?" día":" días")+" seguidos: no cortes la racha.":"¿Hiciste la rutina de hoy? Son 5 minutos. Registrala para sumar a la racha.",schedule:{at:d,allowWhileIdle:true}})}
+    if(list.length)await LN.schedule({notifications:list})}catch(e){console.log("recordatorio",e)}}
+  REM.toggle=async()=>{try{if(!REM.on){let p=await LN.checkPermissions();if(p.display!=="granted")p=await LN.requestPermissions();
+      if(p.display!=="granted"){REM.denied=true;return}REM.denied=false;REM.on=true}else REM.on=false;
+    localStorage.setItem("dia-recordatorio",REM.on?"1":"0")}catch(_){}await schedule()};
+  window.onDiaChanged=schedule;
+  try{LN.addListener("localNotificationActionPerformed",()=>{if(ui.prog!=="dia")switchProg("dia");ui.diaDate=today();ui.view="train";render()})}catch(_){}
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){ui.diaDate=null;render();schedule()}});
+  setTimeout(schedule,500);
+})();
 
 // ---------- arranque ----------
 loadLocal();
